@@ -212,6 +212,19 @@
   transform: scale(0.96);
 }
 
+/* 🍬 Zebra + Hover refinado para DataTable */
+.table-row {
+  transition: background-color 0.25s cubic-bezier(.32,.72,0,1);
+}
+
+.table-row:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.015);
+}
+
+.table-row:hover {
+  background-color: rgba(0, 122, 255, 0.08);
+}
+
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(1px); }

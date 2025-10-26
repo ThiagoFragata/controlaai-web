@@ -1,40 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Pencil, Trash2 } from "lucide-react";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { DataTable, type Column } from "@/components/data-table";
-import { FormDialog } from "@/components/form-dialog";
 import { rendaSchema } from "@/lib/schemas";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Input } from "@/components/ui/input";
+
+import { Button } from "@/components/ui/button";
 import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { FloatingInput } from "@/components/floating-input";
 
 type Renda = z.infer<typeof rendaSchema>;
-
-const columns: Column<Renda>[] = [
-  {
-    header: "Data Recebimento",
-    accessorKey: "dataRecebimento" as keyof Renda,
-    cell: (r) =>
-      r.dataRecebimento ? new Date(r.dataRecebimento).toLocaleDateString() : "",
-  },
-  { header: "Descrição", accessorKey: "descricao" as keyof Renda },
-  {
-    header: "Valor",
-    accessorKey: "valor" as keyof Renda,
-    cell: (r) => `R$ ${(r.valor || 0).toFixed(2)}`,
-  },
-  { header: "Fonte", accessorKey: "fonte" as keyof Renda },
-  { header: "Observações", accessorKey: "observacoes" as keyof Renda },
-];
 
 async function fetchRendas() {
   const res = await fetch("/api/renda");
@@ -43,26 +24,13 @@ async function fetchRendas() {
 }
 
 export default function RendaPage() {
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Renda | null>(null);
-  const queryClient = useQueryClient();
 
   const { data: rendas = [] } = useQuery({
     queryKey: ["renda"],
     queryFn: fetchRendas,
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: (values: Renda) =>
-      fetch("/api/renda", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      }).then((r) => {
-        if (!r.ok) throw new Error("Falha");
-        return r.json();
-      }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["renda"] }),
   });
 
   const createMutation = useMutation({
@@ -71,148 +39,183 @@ export default function RendaPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
-      }).then((r) => {
-        if (!r.ok) throw new Error("Falha ao criar renda");
-        return r.json();
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["renda"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["renda"] });
+      setOpen(false);
+      setSelected(null);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (values: Renda) =>
+      fetch("/api/renda", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["renda"] });
+      setOpen(false);
+      setSelected(null);
+    },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) =>
-      fetch(`/api/renda/${id}`, { method: "DELETE" }).then((r) => {
-        if (!r.ok) throw new Error("Falha");
-        return r.json();
-      }),
+    mutationFn: (id: string) => fetch(`/api/renda/${id}`, { method: "DELETE" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["renda"] }),
   });
 
-  async function onSubmit(values: Renda) {
-    if (selected && selected.id) {
-      await updateMutation.mutateAsync({ ...values, id: selected.id });
-    } else {
-      await createMutation.mutateAsync(values);
-    }
-    setOpen(false);
-    setSelected(null);
-  }
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget as HTMLFormElement);
 
-  function onDelete(row: Renda) {
-    if (!row.id) return;
-    deleteMutation.mutate(row.id);
+    const payload: Renda = {
+      id: selected?.id,
+      descricao: data.get("descricao") as string,
+      valor: Number(data.get("valor")),
+      dataRecebimento: data.get("dataRecebimento") as string,
+      fonte: data.get("fonte") as string,
+      observacoes: data.get("observacoes") as string,
+    };
+
+    return selected
+      ? updateMutation.mutate(payload)
+      : createMutation.mutate(payload);
   }
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">Renda</h1>
+    <div className="px-6 py-10">
+      {/* HEADER */}
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+        <h1 className="text-3xl font-semibold text-[#111]">Renda</h1>
+
         <Button
           onClick={() => {
             setSelected(null);
             setOpen(true);
           }}
+          className="button-ios button-ios-ripple bg-[#007AFF] hover:bg-[#0065d1] text-white px-4 py-2 rounded-lg"
         >
-          <PlusCircle className="mr-2 h-4 w-4" />
+          <PlusCircle className="w-4 h-4 mr-2" />
           Nova Renda
         </Button>
       </div>
 
-      <DataTable
-        data={rendas}
-        columns={columns}
-        onEdit={(r) => {
-          setSelected({
-            ...r,
-            dataRecebimento: r.dataRecebimento
-              ? new Date(r.dataRecebimento).toISOString().split("T")[0]
-              : "",
-          });
-          setOpen(true);
-        }}
-        onDelete={onDelete}
-      />
+      {/* TABELA APPLE GLASS */}
+      <div className="rounded-2xl overflow-hidden border border-[#E5E7EB] bg-white/80 backdrop-blur-md shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
+        <table className="w-full text-sm">
+          <thead className="bg-white/60 backdrop-blur-sm">
+            <tr className="text-left text-[#6B7280] select-none">
+              <th className="px-4 py-3">Data</th>
+              <th className="px-4 py-3">Descrição</th>
+              <th className="px-4 py-3">Valor</th>
+              <th className="px-4 py-3">Fonte</th>
+              <th className="px-4 py-3">Observações</th>
+              <th className="px-4 py-3 text-right">Ações</th>
+            </tr>
+          </thead>
 
-      <FormDialog
-        open={open}
-        onOpenChange={setOpen}
-        title={selected ? "Editar Renda" : "Nova Renda"}
-        defaultValues={selected || undefined}
-        onSubmit={onSubmit}
-        isSubmitting={
-          createMutation.status === "pending" ||
-          updateMutation.status === "pending"
-        }
-      >
-        <FormField
-          name="descricao"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descrição</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <tbody>
+            {rendas.map((r: Renda, i: number) => (
+              <tr
+                key={r.id || i}
+                className={`transition-all ${
+                  i % 2 === 0 ? "bg-white/60" : "bg-white/30"
+                } hover:bg-[#E8F1FF]/80`}
+              >
+                <td className="px-4 py-3">
+                  {r.dataRecebimento
+                    ? new Date(r.dataRecebimento).toLocaleDateString("pt-BR")
+                    : ""}
+                </td>
+                <td className="px-4 py-3">{r.descricao}</td>
+                <td className="px-4 py-3 font-medium">
+                  R$ {r.valor.toFixed(2)}
+                </td>
+                <td className="px-4 py-3">{r.fonte}</td>
+                <td className="px-4 py-3">{r.observacoes}</td>
 
-        <FormField
-          name="valor"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Valor</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                <td className="px-4 py-3">
+                  <div className="flex justify-end gap-3">
+                    <button
+                      onClick={() => {
+                        setSelected({
+                          ...r,
+                          dataRecebimento: r.dataRecebimento
+                            ? r.dataRecebimento.split("T")[0]
+                            : "",
+                        });
+                        setOpen(true);
+                      }}
+                      className="icon-ios text-[#007AFF]"
+                    >
+                      <Pencil size={18} />
+                    </button>
 
-        <FormField
-          name="dataRecebimento"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Data de Recebimento</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                    <button
+                      onClick={() => deleteMutation.mutate(r.id!)}
+                      className="icon-ios text-[#E5484D]"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-        <FormField
-          name="fonte"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Fonte</FormLabel>
-              <FormControl>
-                <Input placeholder="Digite a fonte da renda" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      {/* MODAL */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="bg-white rounded-2xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-center text-lg font-medium">
+              {selected ? "Editar Renda" : "Nova Renda"}
+            </DialogTitle>
+          </DialogHeader>
 
-        <FormField
-          name="observacoes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Observações</FormLabel>
-              <FormControl>
-                <Input placeholder="Digite observações (opcional)" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </FormDialog>
+          <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+            <FloatingInput
+              label="Data de Recebimento"
+              name="dataRecebimento"
+              type="date"
+              defaultValue={selected?.dataRecebimento}
+            />
+
+            <FloatingInput
+              label="Descrição"
+              name="descricao"
+              defaultValue={selected?.descricao}
+            />
+
+            <FloatingInput
+              label="Valor"
+              name="valor"
+              type="number"
+              step="0.01"
+              defaultValue={selected?.valor}
+            />
+
+            <FloatingInput
+              label="Fonte"
+              name="fonte"
+              defaultValue={selected?.fonte}
+            />
+
+            <FloatingInput
+              label="Observações"
+              name="observacoes"
+              defaultValue={selected?.observacoes || ""}
+            />
+
+            <Button className="w-full button-ios button-ios-ripple bg-[#007AFF] hover:bg-[#0065d1] text-white">
+              Salvar
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

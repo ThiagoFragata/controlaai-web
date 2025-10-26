@@ -1,52 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Pencil, Trash2 } from "lucide-react";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { DataTable, type Column } from "@/components/data-table";
-import { FormDialog } from "@/components/form-dialog";
 import { parcelaSchema } from "@/lib/schemas";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Input } from "@/components/ui/input";
+
+import { Button } from "@/components/ui/button";
 import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { FloatingInput } from "@/components/floating-input";
 
 type Parcela = z.infer<typeof parcelaSchema>;
-
-const columns: Column<Parcela>[] = [
-  { header: "Descrição", accessorKey: "descricao" as keyof Parcela },
-  {
-    header: "Valor Total",
-    accessorKey: "valorTotal" as keyof Parcela,
-    cell: (r) => `R$ ${(r.valorTotal || 0).toFixed(2)}`,
-  },
-  {
-    header: "Qtd Parcelas",
-    accessorKey: "qtdParcelas" as keyof Parcela,
-  },
-  {
-    header: "Parcela Atual",
-    accessorKey: "parcelaAtual" as keyof Parcela,
-  },
-  {
-    header: "Valor Parcela",
-    accessorKey: "valorParcela" as keyof Parcela,
-    cell: (r) => `R$ ${(r.valorParcela || 0).toFixed(2)}`,
-  },
-  {
-    header: "Vencimento",
-    accessorKey: "vencimentoData" as keyof Parcela,
-    cell: (r) =>
-      r.vencimentoData ? new Date(r.vencimentoData).toLocaleDateString() : "",
-  },
-  { header: "Observações", accessorKey: "observacoes" as keyof Parcela },
-];
 
 async function fetchParcelas() {
   const res = await fetch("/api/parcelas");
@@ -55,9 +24,9 @@ async function fetchParcelas() {
 }
 
 export default function ParcelasPage() {
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Parcela | null>(null);
-  const queryClient = useQueryClient();
 
   const { data: parcelas = [] } = useQuery({
     queryKey: ["parcelas"],
@@ -70,11 +39,12 @@ export default function ParcelasPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
-      }).then((r) => {
-        if (!r.ok) throw new Error("Falha");
-        return r.json();
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["parcelas"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["parcelas"] });
+      setOpen(false);
+      setSelected(null);
+    },
   });
 
   const updateMutation = useMutation({
@@ -83,189 +53,192 @@ export default function ParcelasPage() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
-      }).then((r) => {
-        if (!r.ok) throw new Error("Falha");
-        return r.json();
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["parcelas"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["parcelas"] });
+      setOpen(false);
+      setSelected(null);
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) =>
-      fetch(`/api/parcelas/${id}`, { method: "DELETE" }).then((r) => {
-        if (!r.ok) throw new Error("Falha");
-        return r.json();
-      }),
+      fetch(`/api/parcelas/${id}`, { method: "DELETE" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["parcelas"] }),
   });
 
-  async function onSubmit(values: Parcela) {
-    if (selected && selected.id) {
-      await updateMutation.mutateAsync({ ...values, id: selected.id });
-    } else {
-      await createMutation.mutateAsync(values);
-    }
-    setOpen(false);
-    setSelected(null);
-  }
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget as HTMLFormElement);
 
-  function onDelete(row: Parcela) {
-    if (!row.id) return;
-    deleteMutation.mutate(row.id);
+    const payload: Parcela = {
+      id: selected?.id,
+      descricao: data.get("descricao") as string,
+      valorTotal: Number(data.get("valorTotal")),
+      qtdParcelas: Number(data.get("qtdParcelas")),
+      parcelaAtual: Number(data.get("parcelaAtual")),
+      valorParcela: Number(data.get("valorParcela")),
+      vencimentoData: data.get("vencimentoData") as string,
+      observacoes: data.get("observacoes") as string,
+    };
+
+    return selected
+      ? updateMutation.mutate(payload)
+      : createMutation.mutate(payload);
   }
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">Parcelas</h1>
+    <div className="px-6 py-10">
+      {/* HEADER */}
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
+        <h1 className="text-3xl font-semibold text-[#111]">Parcelas</h1>
+
         <Button
           onClick={() => {
             setSelected(null);
             setOpen(true);
           }}
+          className="button-ios button-ios-ripple bg-[#007AFF] hover:bg-[#0065d1] text-white px-4 py-2 rounded-lg"
         >
-          <PlusCircle className="mr-2 h-4 w-4" />
+          <PlusCircle className="w-4 h-4 mr-2" />
           Nova Parcela
         </Button>
       </div>
 
-      <DataTable
-        data={parcelas}
-        columns={columns}
-        onEdit={(r) => {
-          setSelected({
-            ...r,
-            vencimentoData: r.vencimentoData
-              ? new Date(r.vencimentoData).toISOString().split("T")[0]
-              : "",
-          });
-          setOpen(true);
-        }}
-        onDelete={onDelete}
-      />
+      {/* TABELA APPLE GLASS */}
+      <div className="rounded-2xl overflow-hidden border border-[#E5E7EB] bg-white/80 backdrop-blur-md shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
+        <table className="w-full text-sm">
+          <thead className="bg-white/60 backdrop-blur-sm">
+            <tr className="text-left text-[#6B7280] select-none">
+              <th className="px-4 py-3">Descrição</th>
+              <th className="px-4 py-3">Valor Total</th>
+              <th className="px-4 py-3">Qtd Parcelas</th>
+              <th className="px-4 py-3">Parcela Atual</th>
+              <th className="px-4 py-3">Valor Parcela</th>
+              <th className="px-4 py-3">Vencimento</th>
+              <th className="px-4 py-3">Observações</th>
+              <th className="px-4 py-3 text-right">Ações</th>
+            </tr>
+          </thead>
 
-      <FormDialog
-        open={open}
-        onOpenChange={setOpen}
-        title={selected ? "Editar Parcela" : "Nova Parcela"}
-        defaultValues={selected || undefined}
-        onSubmit={onSubmit}
-        isSubmitting={
-          createMutation.status === "pending" ||
-          updateMutation.status === "pending"
-        }
-      >
-        <FormField
-          name="descricao"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descrição</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <tbody>
+            {parcelas.map((p: Parcela, i: number) => (
+              <tr
+                key={p.id || i}
+                className={`transition-all ${
+                  i % 2 === 0 ? "bg-white/60" : "bg-white/30"
+                } hover:bg-[#E8F1FF]/80`}
+              >
+                <td className="px-4 py-3">{p.descricao}</td>
+                <td className="px-4 py-3">R$ {p.valorTotal.toFixed(2)}</td>
+                <td className="px-4 py-3">{p.qtdParcelas}</td>
+                <td className="px-4 py-3">{p.parcelaAtual}</td>
+                <td className="px-4 py-3">R$ {p.valorParcela.toFixed(2)}</td>
+                <td className="px-4 py-3">
+                  {p.vencimentoData
+                    ? new Date(p.vencimentoData).toLocaleDateString("pt-BR")
+                    : ""}
+                </td>
+                <td className="px-4 py-3">{p.observacoes}</td>
 
-        <FormField
-          name="valorTotal"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Valor Total</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                <td className="px-4 py-3">
+                  <div className="flex justify-end gap-3">
+                    <button
+                      onClick={() => {
+                        setSelected({
+                          ...p,
+                          vencimentoData: p.vencimentoData
+                            ? p.vencimentoData.split("T")[0]
+                            : "",
+                        });
+                        setOpen(true);
+                      }}
+                      className="icon-ios text-[#007AFF]"
+                    >
+                      <Pencil size={18} />
+                    </button>
 
-        <FormField
-          name="qtdParcelas"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Quantidade de Parcelas</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  min="1"
-                  {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                    <button
+                      onClick={() => deleteMutation.mutate(p.id!)}
+                      className="icon-ios text-[#E5484D]"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-        <FormField
-          name="parcelaAtual"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Parcela Atual</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  min="1"
-                  {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      {/* MODAL */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="bg-white rounded-2xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-center text-lg font-medium">
+              {selected ? "Editar Parcela" : "Nova Parcela"}
+            </DialogTitle>
+          </DialogHeader>
 
-        <FormField
-          name="valorParcela"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Valor da Parcela</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+            <FloatingInput
+              label="Descrição"
+              name="descricao"
+              defaultValue={selected?.descricao}
+            />
 
-        <FormField
-          name="vencimentoData"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Data de Vencimento</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            <FloatingInput
+              label="Valor Total"
+              name="valorTotal"
+              type="number"
+              step="0.01"
+              defaultValue={selected?.valorTotal}
+            />
 
-        <FormField
-          name="observacoes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Observações</FormLabel>
-              <FormControl>
-                <Input placeholder="Digite observações (opcional)" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </FormDialog>
+            <FloatingInput
+              label="Quantidade de Parcelas"
+              name="qtdParcelas"
+              type="number"
+              min="1"
+              defaultValue={selected?.qtdParcelas}
+            />
+
+            <FloatingInput
+              label="Parcela Atual"
+              name="parcelaAtual"
+              type="number"
+              min="1"
+              defaultValue={selected?.parcelaAtual}
+            />
+
+            <FloatingInput
+              label="Valor da Parcela"
+              name="valorParcela"
+              type="number"
+              step="0.01"
+              defaultValue={selected?.valorParcela}
+            />
+
+            <FloatingInput
+              label="Data de Vencimento"
+              name="vencimentoData"
+              type="date"
+              defaultValue={selected?.vencimentoData}
+            />
+
+            <FloatingInput
+              label="Observações"
+              name="observacoes"
+              defaultValue={selected?.observacoes || ""}
+            />
+
+            <Button className="w-full button-ios button-ios-ripple bg-[#007AFF] hover:bg-[#0065d1] text-white">
+              Salvar
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
