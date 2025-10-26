@@ -44,7 +44,17 @@ export default function SignUp() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F5F5F7] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#F5F5F7] px-4 flex-col">
+      {/* HERO */}
+      <div className="mb-8 text-center">
+        <h1 className="text-4xl font-semibold tracking-tight text-[#111]">
+          ControlaAi
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Sua vida financeira, leve 🍃
+        </p>
+      </div>
+
       <Card className="w-full max-w-md border border-[#E5E7EB] shadow-sm bg-white/90 backdrop-blur-sm">
         <CardHeader>
           <CardTitle className="text-center text-xl font-semibold">
