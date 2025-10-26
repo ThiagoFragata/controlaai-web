@@ -6,7 +6,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { DataTable, type Column } from "@/components/data-table";
 import { FormDialog } from "@/components/form-dialog";
-import { rendaSchema } from "@/lib/schemas";
+import { gastoVariavelSchema } from "@/lib/schemas";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,38 +17,47 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
-type Renda = z.infer<typeof rendaSchema>;
+type Gasto = z.infer<typeof gastoVariavelSchema>;
 
-const columns: Column<Renda>[] = [
-  { header: "Descrição", accessorKey: "descricao" as keyof Renda },
+const columns: Column<Gasto>[] = [
+  {
+    header: "Data",
+    accessorKey: "data" as keyof Gasto,
+    cell: (r) => (r.data ? new Date(r.data).toLocaleDateString() : ""),
+  },
+  { header: "Descrição", accessorKey: "descricao" as keyof Gasto },
+  { header: "Categoria", accessorKey: "categoria" as keyof Gasto },
   {
     header: "Valor",
-    accessorKey: "valor" as keyof Renda,
-    cell: (r) => `R$ ${r.valor.toFixed(2)}`,
+    accessorKey: "valor" as keyof Gasto,
+    cell: (r) => `R$ ${(r.valor || 0).toFixed(2)}`,
   },
-  { header: "Data Recebimento", accessorKey: "dataRecebimento" as keyof Renda },
-  { header: "Fonte", accessorKey: "fonte" as keyof Renda },
+  {
+    header: "Forma de Pagamento",
+    accessorKey: "formaPagamento" as keyof Gasto,
+  },
+  { header: "Observações", accessorKey: "observacoes" as keyof Gasto },
 ];
 
-async function fetchRendas() {
-  const res = await fetch("/api/renda");
-  if (!res.ok) throw new Error("Falha ao buscar rendas");
+async function fetchGastos() {
+  const res = await fetch("/api/gastos-variaveis");
+  if (!res.ok) throw new Error("Falha ao buscar gastos");
   return res.json();
 }
 
-export default function RendaPage() {
+export default function GastosVariaveisPage() {
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<Renda | null>(null);
+  const [selected, setSelected] = useState<Gasto | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: rendas = [] } = useQuery({
-    queryKey: ["renda"],
-    queryFn: fetchRendas,
+  const { data: gastos = [] } = useQuery({
+    queryKey: ["gastos-variaveis"],
+    queryFn: fetchGastos,
   });
 
   const createMutation = useMutation({
-    mutationFn: (values: Renda) =>
-      fetch("/api/renda", {
+    mutationFn: (values: Gasto) =>
+      fetch("/api/gastos-variaveis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
@@ -56,12 +65,13 @@ export default function RendaPage() {
         if (!r.ok) throw new Error("Falha");
         return r.json();
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["renda"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["gastos-variaveis"] }),
   });
 
   const updateMutation = useMutation({
-    mutationFn: (values: Renda) =>
-      fetch("/api/renda", {
+    mutationFn: (values: Gasto) =>
+      fetch("/api/gastos-variaveis", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
@@ -69,19 +79,21 @@ export default function RendaPage() {
         if (!r.ok) throw new Error("Falha");
         return r.json();
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["renda"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["gastos-variaveis"] }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) =>
-      fetch(`/api/renda/${id}`, { method: "DELETE" }).then((r) => {
+      fetch(`/api/gastos-variaveis/${id}`, { method: "DELETE" }).then((r) => {
         if (!r.ok) throw new Error("Falha");
         return r.json();
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["renda"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["gastos-variaveis"] }),
   });
 
-  async function onSubmit(values: Renda) {
+  async function onSubmit(values: Gasto) {
     if (selected && selected.id) {
       await updateMutation.mutateAsync({ ...values, id: selected.id });
     } else {
@@ -91,7 +103,7 @@ export default function RendaPage() {
     setSelected(null);
   }
 
-  function onDelete(row: Renda) {
+  function onDelete(row: Gasto) {
     if (!row.id) return;
     deleteMutation.mutate(Number(row.id));
   }
@@ -99,7 +111,7 @@ export default function RendaPage() {
   return (
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">Renda</h1>
+        <h1 className="text-2xl font-bold">Gastos Variáveis</h1>
         <Button
           onClick={() => {
             setSelected(null);
@@ -107,15 +119,18 @@ export default function RendaPage() {
           }}
         >
           <PlusCircle className="mr-2 h-4 w-4" />
-          Nova Renda
+          Novo Gasto
         </Button>
       </div>
 
       <DataTable
-        data={rendas}
+        data={gastos}
         columns={columns}
         onEdit={(r) => {
-          setSelected(r);
+          setSelected({
+            ...r,
+            data: r.data ? new Date(r.data).toISOString().split("T")[0] : "",
+          });
           setOpen(true);
         }}
         onDelete={onDelete}
@@ -124,10 +139,13 @@ export default function RendaPage() {
       <FormDialog
         open={open}
         onOpenChange={setOpen}
-        title={selected ? "Editar Renda" : "Nova Renda"}
-        schema={rendaSchema}
+        title={selected ? "Editar Gasto" : "Novo Gasto"}
         defaultValues={selected || undefined}
         onSubmit={onSubmit}
+        isSubmitting={
+          createMutation.status === "pending" ||
+          updateMutation.status === "pending"
+        }
       >
         <FormField
           name="descricao"
@@ -161,12 +179,51 @@ export default function RendaPage() {
         />
 
         <FormField
-          name="dataRecebimento"
+          name="data"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Data de Recebimento</FormLabel>
+              <FormLabel>Data</FormLabel>
               <FormControl>
                 <Input type="date" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          name="categoria"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Categoria</FormLabel>
+              <FormControl>
+                <Input placeholder="Digite a categoria" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          name="formaPagamento"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Forma de Pagamento</FormLabel>
+              <FormControl>
+                <Input placeholder="Digite a forma de pagamento" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          name="observacoes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Observações</FormLabel>
+              <FormControl>
+                <Input placeholder="Digite observações (opcional)" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

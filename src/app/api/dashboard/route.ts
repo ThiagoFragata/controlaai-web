@@ -17,6 +17,7 @@ export async function GET() {
   }
 
   const userId = session.user.id;
+
   try {
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth();

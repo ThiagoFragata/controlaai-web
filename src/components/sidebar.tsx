@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   CreditCard,
@@ -9,6 +10,7 @@ import {
   TrendingDown,
   Wallet,
   Clock,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -16,32 +18,32 @@ const menuItems = [
   {
     title: "Dashboard",
     icon: LayoutDashboard,
-    href: "/",
+    href: "/dashboard",
   },
   {
     title: "Contas Mensais",
     icon: CreditCard,
-    href: "/contas-mensais",
+    href: "/dashboard/contas-mensais",
   },
   {
     title: "Parcelas",
     icon: ShoppingCart,
-    href: "/parcelas",
+    href: "/dashboard/parcelas",
   },
   {
     title: "Gastos Variáveis",
     icon: TrendingDown,
-    href: "/gastos-variaveis",
+    href: "/dashboard/gastos-variaveis",
   },
   {
     title: "Renda",
     icon: Wallet,
-    href: "/renda",
+    href: "/dashboard/renda",
   },
   {
     title: "Contas Futuras",
     icon: Clock,
-    href: "/contas-futuras",
+    href: "/dashboard/contas-futuras",
   },
 ];
 
@@ -78,7 +80,14 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-slate-700">
+      <div className="p-4 border-t border-slate-700 space-y-2">
+        <button
+          onClick={() => signOut({ callbackUrl: "/signin" })}
+          className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-slate-300 hover:bg-slate-800 hover:text-white w-full"
+        >
+          <LogOut className="w-5 h-5" />
+          <span>Sair</span>
+        </button>
         <p className="text-xs text-slate-400 text-center">Versão 1.0.0</p>
       </div>
     </div>

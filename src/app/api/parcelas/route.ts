@@ -1,12 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { serializeDecimal } from "@/lib/utils";
 
 export async function GET() {
+  const session = await getServerSession(authOptions);
+
+  if (!session || !session.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const userId = session.user.id;
+
   try {
     const parcelas = await prisma.parcelas.findMany({
+      where: { userId },
       orderBy: { vencimentoData: "asc" },
     });
-    return NextResponse.json(parcelas);
+    return NextResponse.json(serializeDecimal(parcelas));
   } catch (error) {
     console.error("Erro ao buscar parcelas:", error);
     return NextResponse.json(
@@ -17,10 +29,26 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const session = await getServerSession(authOptions);
+
+  if (!session || !session.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const userId = session.user.id;
+
   try {
     const body = await request.json();
+    // Convert date string to full ISO string for Prisma
+    const data = {
+      ...body,
+      userId,
+      vencimentoData: body.vencimentoData
+        ? new Date(body.vencimentoData).toISOString()
+        : undefined,
+    };
     const parcela = await prisma.parcelas.create({
-      data: body,
+      data,
     });
     return NextResponse.json(parcela);
   } catch (error) {
@@ -33,11 +61,39 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+
+  if (!session || !session.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const userId = session.user.id;
+
   try {
     const body = await request.json();
-    const { id, ...data } = body;
-    if (!id)
+    const { id, ...updateData } = body;
+
+    if (!id) {
       return NextResponse.json({ error: "ID não fornecido" }, { status: 400 });
+    }
+
+    // Check if the record belongs to the user
+    const existing = await prisma.parcelas.findUnique({
+      where: { id },
+    });
+
+    if (!existing || existing.userId !== userId) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    // Convert date string to full ISO string for Prisma
+    const data = {
+      ...updateData,
+      vencimentoData: updateData.vencimentoData
+        ? new Date(updateData.vencimentoData).toISOString()
+        : updateData.vencimentoData,
+    };
+
     const parcela = await prisma.parcelas.update({ where: { id }, data });
     return NextResponse.json(parcela);
   } catch (error) {
@@ -50,8 +106,30 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+
+  if (!session || !session.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const userId = session.user.id;
+
   try {
     const id = request.nextUrl.pathname.split("/").pop();
+
+    if (!id) {
+      return NextResponse.json({ error: "ID não fornecido" }, { status: 400 });
+    }
+
+    // Check if the record belongs to the user
+    const existing = await prisma.parcelas.findUnique({
+      where: { id },
+    });
+
+    if (!existing || existing.userId !== userId) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
     await prisma.parcelas.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {

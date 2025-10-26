@@ -15,13 +15,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 type ContaMensal = z.infer<typeof contaMensalSchema>;
 
@@ -35,20 +28,20 @@ const columns: Column<ContaMensal>[] = [
   {
     header: "Valor",
     accessorKey: "valor" as keyof ContaMensal,
-    cell: (row: ContaMensal) => `R$ ${row.valor.toFixed(2)}`,
+    cell: (row: ContaMensal) => `R$ ${(row.valor || 0).toFixed(2)}`,
   },
   {
     header: "Vencimento",
-    accessorKey: "vencimento" as keyof ContaMensal,
-    cell: (row: ContaMensal) => `Dia ${row.vencimento}`,
+    accessorKey: "vencimentoDia" as keyof ContaMensal,
+    cell: (row: ContaMensal) => `Dia ${row.vencimentoDia}`,
   },
   {
-    header: "Categoria",
-    accessorKey: "categoria" as keyof ContaMensal,
+    header: "Forma de Pagamento",
+    accessorKey: "formaPagamento" as keyof ContaMensal,
   },
   {
-    header: "Status",
-    accessorKey: "status" as keyof ContaMensal,
+    header: "Observações",
+    accessorKey: "observacoes" as keyof ContaMensal,
   },
 ];
 
@@ -158,9 +151,12 @@ export default function ContasMensais() {
         open={open}
         onOpenChange={setOpen}
         title={isEditing ? "Editar Conta Mensal" : "Nova Conta Mensal"}
-        schema={contaMensalSchema}
         defaultValues={selectedConta || undefined}
         onSubmit={onSubmit}
+        isSubmitting={
+          createMutation.status === "pending" ||
+          updateMutation.status === "pending"
+        }
       >
         <FormField
           name="descricao"
@@ -195,7 +191,7 @@ export default function ContasMensais() {
         />
 
         <FormField
-          name="vencimento"
+          name="vencimentoDia"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Dia do Vencimento</FormLabel>
@@ -215,12 +211,12 @@ export default function ContasMensais() {
         />
 
         <FormField
-          name="categoria"
+          name="formaPagamento"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Categoria</FormLabel>
+              <FormLabel>Forma de Pagamento</FormLabel>
               <FormControl>
-                <Input placeholder="Digite a categoria" {...field} />
+                <Input placeholder="Digite a forma de pagamento" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -228,21 +224,13 @@ export default function ContasMensais() {
         />
 
         <FormField
-          name="status"
+          name="observacoes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="ATIVO">Ativo</SelectItem>
-                  <SelectItem value="INATIVO">Inativo</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormLabel>Observações</FormLabel>
+              <FormControl>
+                <Input placeholder="Digite observações (opcional)" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

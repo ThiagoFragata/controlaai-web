@@ -1,9 +1,7 @@
 "use client";
 
 import React from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useForm, FieldValues, DefaultValues } from "react-hook-form";
 import {
   Dialog,
   DialogContent,
@@ -12,42 +10,32 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 
-type FormDialogProps<TSchema extends z.ZodType<any, any>> = {
+interface FormDialogProps<T extends FieldValues = FieldValues> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  schema: TSchema;
-  defaultValues?: Partial<z.infer<TSchema>>;
-  onSubmit: (values: z.infer<TSchema>) => Promise<void>;
+  defaultValues?: DefaultValues<T>;
+  onSubmit: (values: T) => Promise<void>;
+  isSubmitting?: boolean;
   children: React.ReactNode;
-};
+}
 
-export function FormDialog<TSchema extends z.ZodType<any, any>>({
+export function FormDialog<T extends FieldValues = FieldValues>({
   open,
   onOpenChange,
   title,
-  schema,
   defaultValues,
   onSubmit,
+  isSubmitting = false,
   children,
-}: FormDialogProps<TSchema>) {
-  type FormData = z.infer<TSchema>;
-
-  const form = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: defaultValues || ({} as Partial<FormData>),
+}: FormDialogProps<T>) {
+  const form = useForm<T>({
+    defaultValues,
   });
 
-  async function handleSubmit(values: z.infer<T>) {
+  async function handleSubmit(values: T) {
     try {
       await onSubmit(values);
       form.reset();
@@ -76,10 +64,13 @@ export function FormDialog<TSchema extends z.ZodType<any, any>>({
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
               >
                 Cancelar
               </Button>
-              <Button type="submit">Salvar</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Salvando..." : "Salvar"}
+              </Button>
             </DialogFooter>
           </form>
         </Form>

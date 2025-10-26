@@ -29,7 +29,6 @@ model User {
   parcelas        Parcelas[]
   gastosVariaveis GastosVariaveis[]
   rendas          Renda[]
-  contasFuturas   ContasFuturas[]
 }
 
 model Account {
@@ -120,17 +119,4 @@ model Renda {
   updatedAt       DateTime @updatedAt
   User            User?    @relation(fields: [userId], references: [id])
   userId          String?
-}
-
-model ContasFuturas {
-  id                String   @id @default(uuid())
-  descricao         String
-  valorEstimado     Decimal  @db.Decimal(10, 2)
-  previsaoPagamento String
-  prioridade        String
-  observacoes       String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  User              User?    @relation(fields: [userId], references: [id])
-  userId            String?
 }

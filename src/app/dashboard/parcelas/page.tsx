@@ -22,12 +22,30 @@ type Parcela = z.infer<typeof parcelaSchema>;
 const columns: Column<Parcela>[] = [
   { header: "Descrição", accessorKey: "descricao" as keyof Parcela },
   {
-    header: "Valor",
-    accessorKey: "valorParcela" as keyof Parcela,
-    cell: (r) => `R$ ${r.valorParcela.toFixed(2)}`,
+    header: "Valor Total",
+    accessorKey: "valorTotal" as keyof Parcela,
+    cell: (r) => `R$ ${(r.valorTotal || 0).toFixed(2)}`,
   },
-  { header: "Vencimento", accessorKey: "vencimentoData" as keyof Parcela },
-  { header: "Status", accessorKey: "status" as keyof Parcela },
+  {
+    header: "Qtd Parcelas",
+    accessorKey: "qtdParcelas" as keyof Parcela,
+  },
+  {
+    header: "Parcela Atual",
+    accessorKey: "parcelaAtual" as keyof Parcela,
+  },
+  {
+    header: "Valor Parcela",
+    accessorKey: "valorParcela" as keyof Parcela,
+    cell: (r) => `R$ ${(r.valorParcela || 0).toFixed(2)}`,
+  },
+  {
+    header: "Vencimento",
+    accessorKey: "vencimentoData" as keyof Parcela,
+    cell: (r) =>
+      r.vencimentoData ? new Date(r.vencimentoData).toLocaleDateString() : "",
+  },
+  { header: "Observações", accessorKey: "observacoes" as keyof Parcela },
 ];
 
 async function fetchParcelas() {
@@ -115,7 +133,12 @@ export default function ParcelasPage() {
         data={parcelas}
         columns={columns}
         onEdit={(r) => {
-          setSelected(r);
+          setSelected({
+            ...r,
+            vencimentoData: r.vencimentoData
+              ? new Date(r.vencimentoData).toISOString().split("T")[0]
+              : "",
+          });
           setOpen(true);
         }}
         onDelete={onDelete}
@@ -125,9 +148,12 @@ export default function ParcelasPage() {
         open={open}
         onOpenChange={setOpen}
         title={selected ? "Editar Parcela" : "Nova Parcela"}
-        schema={parcelaSchema}
         defaultValues={selected || undefined}
         onSubmit={onSubmit}
+        isSubmitting={
+          createMutation.status === "pending" ||
+          updateMutation.status === "pending"
+        }
       >
         <FormField
           name="descricao"
@@ -143,10 +169,64 @@ export default function ParcelasPage() {
         />
 
         <FormField
+          name="valorTotal"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Valor Total</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.01"
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          name="qtdParcelas"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Quantidade de Parcelas</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  min="1"
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          name="parcelaAtual"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Parcela Atual</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  min="1"
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
           name="valorParcela"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Valor</FormLabel>
+              <FormLabel>Valor da Parcela</FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -167,6 +247,19 @@ export default function ParcelasPage() {
               <FormLabel>Data de Vencimento</FormLabel>
               <FormControl>
                 <Input type="date" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          name="observacoes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Observações</FormLabel>
+              <FormControl>
+                <Input placeholder="Digite observações (opcional)" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
