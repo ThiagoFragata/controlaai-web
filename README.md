@@ -8,6 +8,12 @@ Um sistema completo de controle financeiro pessoal, desenvolvido com Next.js 16 
 ![Prisma](https://img.shields.io/badge/Prisma-6.18.0-green)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-cyan)
 
+## 🌐 Deploy
+
+O projeto está disponível em produção em:
+
+https://controlaai-web.vercel.app/
+
 ## ✨ Funcionalidades
 
 ### 📊 Dashboard
