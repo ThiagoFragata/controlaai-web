@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     const conta = await prisma.contasMensais.create({
       data: { ...body, userId },
     });
-    return NextResponse.json(conta);
+    return NextResponse.json(serializeDecimal(conta));
   } catch (error) {
     console.error("Erro ao criar conta mensal:", error);
     return NextResponse.json(
@@ -63,7 +63,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, ...data } = body;
+    const { id, ...updateData } = body;
 
     if (!id) {
       return NextResponse.json({ error: "ID não fornecido" }, { status: 400 });
@@ -80,10 +80,10 @@ export async function PUT(request: NextRequest) {
 
     const conta = await prisma.contasMensais.update({
       where: { id },
-      data,
+      data: { ...updateData, userId },
     });
 
-    return NextResponse.json(conta);
+    return NextResponse.json(serializeDecimal(conta));
   } catch (error) {
     console.error("Erro ao atualizar conta mensal:", error);
     return NextResponse.json(

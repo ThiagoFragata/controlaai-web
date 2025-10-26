@@ -79,7 +79,7 @@ export default function RendaPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) =>
+    mutationFn: (id: string) =>
       fetch(`/api/renda/${id}`, { method: "DELETE" }).then((r) => {
         if (!r.ok) throw new Error("Falha");
         return r.json();
@@ -99,7 +99,7 @@ export default function RendaPage() {
 
   function onDelete(row: Renda) {
     if (!row.id) return;
-    deleteMutation.mutate(Number(row.id));
+    deleteMutation.mutate(row.id);
   }
 
   return (

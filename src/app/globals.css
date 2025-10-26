@@ -120,3 +120,12 @@
     @apply bg-background text-foreground;
   }
 }
+
+
+/* | Elemento         | Cor                              |
+| ---------------- | -------------------------------- |
+| Background       | `#F5F5F7`                        |
+| Card             | `#FFFFFF` com `border-[#E5E7EB]` |
+| Azul Apple       | `#007AFF`                        |
+| Texto primário   | `#111111`                        |
+| Texto secundário | `#6B7280`                        | */

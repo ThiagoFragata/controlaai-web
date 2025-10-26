@@ -103,38 +103,4 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-
-  if (!session || !session.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const userId = session.user.id;
-
-  try {
-    const id = request.nextUrl.pathname.split("/").pop();
-
-    if (!id) {
-      return NextResponse.json({ error: "ID não fornecido" }, { status: 400 });
-    }
-
-    // Check if the record belongs to the user
-    const existing = await prisma.gastosVariaveis.findUnique({
-      where: { id },
-    });
-
-    if (!existing || existing.userId !== userId) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
-
-    await prisma.gastosVariaveis.delete({ where: { id } });
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Erro ao excluir gasto variável:", error);
-    return NextResponse.json(
-      { error: "Erro ao excluir gasto variável" },
-      { status: 500 }
-    );
-  }
-}
+// DELETE method removed from this file - will be handled by dynamic route

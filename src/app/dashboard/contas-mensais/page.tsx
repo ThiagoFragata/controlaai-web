@@ -98,7 +98,7 @@ export default function ContasMensais() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) =>
+    mutationFn: (id: string) =>
       fetch(`/api/contas-mensais/${id}`, {
         method: "DELETE",
       }).then((res) => {
@@ -120,7 +120,7 @@ export default function ContasMensais() {
 
   function onDelete(conta: ContaMensal) {
     if (!conta.id) return;
-    deleteMutation.mutate(Number(conta.id));
+    deleteMutation.mutate(conta.id);
   }
   return (
     <div className="container mx-auto py-10">
@@ -151,7 +151,15 @@ export default function ContasMensais() {
         open={open}
         onOpenChange={setOpen}
         title={isEditing ? "Editar Conta Mensal" : "Nova Conta Mensal"}
-        defaultValues={selectedConta || undefined}
+        defaultValues={
+          selectedConta
+            ? {
+                ...selectedConta,
+                valor: Number(selectedConta.valor) || 0,
+                vencimentoDia: Number(selectedConta.vencimentoDia) || 1,
+              }
+            : undefined
+        }
         onSubmit={onSubmit}
         isSubmitting={
           createMutation.status === "pending" ||

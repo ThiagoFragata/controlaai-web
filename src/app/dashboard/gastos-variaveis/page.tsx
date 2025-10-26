@@ -84,7 +84,7 @@ export default function GastosVariaveisPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) =>
+    mutationFn: (id: string) =>
       fetch(`/api/gastos-variaveis/${id}`, { method: "DELETE" }).then((r) => {
         if (!r.ok) throw new Error("Falha");
         return r.json();
@@ -105,7 +105,7 @@ export default function GastosVariaveisPage() {
 
   function onDelete(row: Gasto) {
     if (!row.id) return;
-    deleteMutation.mutate(Number(row.id));
+    deleteMutation.mutate(row.id);
   }
 
   return (
