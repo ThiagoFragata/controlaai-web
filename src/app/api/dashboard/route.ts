@@ -2,134 +2,97 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import type {
-  Renda,
-  ContasMensais,
-  Parcelas,
-  GastosVariaveis,
-} from "@prisma/client";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
 
-  if (!session || !session.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!session?.user?.id)
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   const userId = session.user.id;
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
 
-  try {
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
-
-    // Buscar todas as rendas do mês atual
-    const rendas: Renda[] = await prisma.renda.findMany({
+  const [rendas, contas, parcelas, gastos] = await Promise.all([
+    prisma.renda.findMany({
       where: {
         userId,
-        dataRecebimento: {
-          gte: new Date(currentYear, currentMonth, 1),
-          lt: new Date(currentYear, currentMonth + 1, 1),
-        },
+        dataRecebimento: { gte: new Date(y, m, 1), lt: new Date(y, m + 1, 1) },
       },
-    });
-
-    // Buscar todas as contas mensais
-    const contasMensais: ContasMensais[] = await prisma.contasMensais.findMany({
-      where: { userId },
-    });
-
-    // Buscar parcelas do mês atual
-    const parcelas: Parcelas[] = await prisma.parcelas.findMany({
+    }),
+    prisma.contasMensais.findMany({ where: { userId } }),
+    prisma.parcelas.findMany({
       where: {
         userId,
-        vencimentoData: {
-          gte: new Date(currentYear, currentMonth, 1),
-          lt: new Date(currentYear, currentMonth + 1, 1),
-        },
+        vencimentoData: { gte: new Date(y, m, 1), lt: new Date(y, m + 1, 1) },
       },
-    });
-
-    // Buscar gastos variáveis do mês atual
-    const gastosVariaveis: GastosVariaveis[] =
-      await prisma.gastosVariaveis.findMany({
-        where: {
-          userId,
-          data: {
-            gte: new Date(currentYear, currentMonth, 1),
-            lt: new Date(currentYear, currentMonth + 1, 1),
-          },
-        },
-      });
-
-    // Calcular totais
-    const rendaTotal = rendas.reduce(
-      (sum: number, renda: Renda) => sum + Number(renda.valor),
-      0
-    );
-
-    const contasMensaisTotal = contasMensais.reduce(
-      (sum: number, conta: ContasMensais) => sum + Number(conta.valor),
-      0
-    );
-
-    const parcelasTotal = parcelas.reduce(
-      (sum: number, parcela: Parcelas) => sum + Number(parcela.valorParcela),
-      0
-    );
-
-    const gastosVariaveisTotal = gastosVariaveis.reduce(
-      (sum: number, gasto: GastosVariaveis) => sum + Number(gasto.valor),
-      0
-    );
-
-    const totalGastos =
-      contasMensaisTotal + parcelasTotal + gastosVariaveisTotal;
-    const saldo = rendaTotal - totalGastos;
-
-    // Agrupar gastos por categoria
-    const gastosPorCategoria = gastosVariaveis.reduce(
-      (acc: Record<string, number>, gasto: GastosVariaveis) => {
-        const categoria = gasto.categoria ?? "Sem Categoria";
-        if (!acc[categoria]) {
-          acc[categoria] = 0;
-        }
-        acc[categoria] += Number(gasto.valor);
-        return acc;
+    }),
+    prisma.gastosVariaveis.findMany({
+      where: {
+        userId,
+        data: { gte: new Date(y, m, 1), lt: new Date(y, m + 1, 1) },
       },
-      {} as Record<string, number>
-    );
+    }),
+  ]);
 
-    // Adicionar categorias fixas
-    if (contasMensaisTotal > 0) {
-      gastosPorCategoria["Contas Fixas"] = contasMensaisTotal;
-    }
-    if (parcelasTotal > 0) {
-      gastosPorCategoria["Parcelas"] = parcelasTotal;
-    }
+  const rendaTotal = rendas.reduce((s, r) => s + Number(r.valor), 0);
+  const contasTotal = contas.reduce((s, c) => s + Number(c.valor), 0);
+  const parcelasTotal = parcelas.reduce(
+    (s, p) => s + Number(p.valorParcela),
+    0
+  );
+  const gastosTotal = gastos.reduce((s, g) => s + Number(g.valor), 0);
+  const totalGastos = contasTotal + parcelasTotal + gastosTotal;
+  const saldo = rendaTotal - totalGastos;
 
-    // Formatar para o gráfico
-    const chartData = Object.entries(gastosPorCategoria).map(
-      ([name, value]: [string, number]) => ({
-        name,
-        value: Number(value.toFixed(2)),
-      })
-    );
+  const categorias: Record<string, number> = {};
+  gastos.forEach((g) => {
+    categorias[g.categoria || "Outros"] =
+      (categorias[g.categoria || "Outros"] || 0) + Number(g.valor);
+  });
+  categorias["Contas Fixas"] = contasTotal;
+  categorias["Parcelas"] = parcelasTotal;
 
-    return NextResponse.json({
-      rendaTotal: Number(rendaTotal.toFixed(2)),
-      contasMensaisTotal: Number(contasMensaisTotal.toFixed(2)),
-      parcelasTotal: Number(parcelasTotal.toFixed(2)),
-      gastosVariaveisTotal: Number(gastosVariaveisTotal.toFixed(2)),
-      totalGastos: Number(totalGastos.toFixed(2)),
-      saldo: Number(saldo.toFixed(2)),
-      chartData,
-    });
-  } catch (error) {
-    console.error("Erro ao buscar dados do dashboard:", error);
-    return NextResponse.json(
-      { error: "Erro ao buscar dados do dashboard" },
-      { status: 500 }
-    );
-  }
+  const chartData = Object.entries(categorias).map(([name, value]) => ({
+    name,
+    value,
+  }));
+
+  const maiorGasto = gastos.length
+    ? gastos.reduce((a, b) => (Number(a.valor) > Number(b.valor) ? a : b))
+    : null;
+
+  const proximaParcela =
+    parcelas
+      .filter((p) => new Date(p.vencimentoData) >= now)
+      .sort(
+        (a, b) =>
+          new Date(a.vencimentoData).getTime() -
+          new Date(b.vencimentoData).getTime()
+      )[0] || null;
+
+  return NextResponse.json({
+    rendaTotal,
+    contasMensaisTotal: contasTotal,
+    parcelasTotal,
+    gastosVariaveisTotal: gastosTotal,
+    totalGastos,
+    saldo,
+    chartData,
+    qtdRendas: rendas.length,
+    qtdContasMensais: contas.length,
+    qtdParcelas: parcelas.length,
+    qtdGastosVariaveis: gastos.length,
+    mediaGastosVariaveis: gastos.length ? gastosTotal / gastos.length : 0,
+    maiorGastoVariavel: maiorGasto && {
+      descricao: maiorGasto.descricao,
+      valor: Number(maiorGasto.valor),
+    },
+    proximaParcela: proximaParcela && {
+      descricao: proximaParcela.descricao,
+      valor: Number(proximaParcela.valorParcela),
+      data: proximaParcela.vencimentoData,
+    },
+  });
 }

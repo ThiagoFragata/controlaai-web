@@ -1,85 +1,127 @@
 import type { Metadata } from "next";
-import type { ReactElement } from "react";
 import { DashboardWrapper } from "@/components/DashboardWrapper";
+import { cookies } from "next/headers";
 
 export const metadata: Metadata = {
   title: "Dashboard - ControlaAí",
-  description: "Resumo financeiro mensal e gráficos",
 };
 
-type DashboardResponse = {
-  rendaTotal: number;
-  contasMensaisTotal: number;
-  parcelasTotal: number;
-  gastosVariaveisTotal: number;
-  totalGastos: number;
-  saldo: number;
-  chartData: { name: string; value: number }[];
-};
-
-async function getDashboardData(): Promise<DashboardResponse | null> {
+async function getDashboard() {
   try {
+    const cookieStore = await cookies(); // ✅ Cookies no servidor
+
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/dashboard`, { cache: "no-store" });
+    const res = await fetch(`${baseUrl}/api/dashboard`, {
+      cache: "no-store",
+      headers: {
+        Cookie: cookieStore.toString(), // ✅ Envia cookie da sessão
+      },
+    });
+
     if (!res.ok) return null;
-    return (await res.json()) as DashboardResponse;
+    return res.json();
   } catch (err) {
-    console.error("Erro ao buscar dados do dashboard", err);
+    console.log("ERRO NO DASHBOARD FETCH:", err);
     return null;
   }
 }
 
-export default async function Home(): Promise<ReactElement> {
-  const data = await getDashboardData();
+export default async function Home() {
+  const data = await getDashboard();
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 items-start mt-8">
-      <div className="col-span-2 borders">
-        <h2 className="text-2xl font-semibold mb-4">Resumo Mensal</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="p-4 bg-white rounded shadow">
-            <p className="text-sm text-slate-500">Receitas</p>
-            <p className="mt-2 text-xl font-bold">
-              {data ? `R$ ${data.rendaTotal.toFixed(2)}` : "-"}
-            </p>
-          </div>
-          <div className="p-4 bg-white rounded shadow">
-            <p className="text-sm text-slate-500">Gastos Fixos</p>
-            <p className="mt-2 text-xl font-bold">
-              {data ? `R$ ${data.contasMensaisTotal.toFixed(2)}` : "-"}
-            </p>
-          </div>
-          <div className="p-4 bg-white rounded shadow">
-            <p className="text-sm text-slate-500">Parcelas</p>
-            <p className="mt-2 text-xl font-bold">
-              {data ? `R$ ${data.parcelasTotal.toFixed(2)}` : "-"}
-            </p>
-          </div>
-          <div className="p-4 bg-white rounded shadow">
-            <p className="text-sm text-slate-500">Saldo</p>
-            <p className="mt-2 text-xl font-bold text-emerald-600">
-              {data ? `R$ ${data.saldo.toFixed(2)}` : "-"}
-            </p>
-          </div>
+    <div className="px-6 py-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* COLUNA PRINCIPAL */}
+      <div className="col-span-2 space-y-6">
+        {/* TÍTULO */}
+        <h2 className="text-3xl font-semibold text-[#111]">Resumo Mensal</h2>
+        {/* CARDS */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            {
+              label: "Receitas",
+              value: data?.rendaTotal,
+              footer: `${data?.qtdRendas || 0} entradas`,
+            },
+            {
+              label: "Contas Fixas",
+              value: data?.contasMensaisTotal,
+              footer: `${data?.qtdContasMensais || 0} contas`,
+            },
+            {
+              label: "Parcelas",
+              value: data?.parcelasTotal,
+              footer: `${data?.qtdParcelas || 0} parcelas`,
+            },
+            {
+              label: "Saldo",
+              value: data?.saldo,
+              footer: data?.saldo >= 0 ? "Positivo" : "Negativo",
+              className: data?.saldo >= 0 ? "text-emerald-600" : "text-red-600",
+            },
+          ].map((item, i) => (
+            <div
+              key={i}
+              className="p-4 rounded-2xl bg-white/70 backdrop-blur-md border border-slate-200 shadow-sm hover:shadow-md transition"
+            >
+              <p className="text-sm text-slate-500">{item.label}</p>
+              <p
+                className={`mt-1 text-2xl font-semibold ${
+                  item.className || "text-[#111]"
+                }`}
+              >
+                {data ? `R$ ${item.value?.toFixed(2)}` : "-"}
+              </p>
+              <p className="text-xs text-slate-400 mt-1">{item.footer}</p>
+            </div>
+          ))}
         </div>
 
-        {/* componente wrapper cliente que carrega Recharts */}
-        <DashboardWrapper chartData={data?.chartData ?? []} />
+        {/* GRÁFICO */}
+        <div className="rounded-2xl p-4 bg-white/70 backdrop-blur-md border border-slate-200 shadow-sm">
+          <DashboardWrapper chartData={data?.chartData ?? []} />
+        </div>
       </div>
 
-      <aside className="col-span-1">
-        <div className="p-4 bg-white rounded shadow">
-          <h3 className="text-lg font-medium mb-2">Detalhes</h3>
-          <ul className="text-sm text-slate-600 space-y-1">
-            <li>
-              Gastos Variáveis:{" "}
-              {data ? `R$ ${data.gastosVariaveisTotal.toFixed(2)}` : "-"}
-            </li>
-            <li>
-              Total Gastos: {data ? `R$ ${data.totalGastos.toFixed(2)}` : "-"}
-            </li>
-          </ul>
+      {/* SIDEBAR */}
+      <aside className="space-y-4">
+        <div className="p-4 rounded-2xl bg-white/70 backdrop-blur-md border border-slate-200 shadow-sm">
+          <h3 className="font-medium mb-2">Gastos Variáveis</h3>
+          <p className="text-lg font-semibold text-[#111]">
+            R$ {data?.gastosVariaveisTotal?.toFixed(2)}
+          </p>
+          <p className="text-xs text-slate-500 mt-1">
+            {data?.qtdGastosVariaveis || 0} registros • Média R${" "}
+            {data?.mediaGastosVariaveis?.toFixed(2)}
+          </p>
         </div>
+
+        {data?.maiorGastoVariavel && (
+          <div className="p-4 rounded-2xl bg-white/70 backdrop-blur-md border border-slate-200 shadow-sm">
+            <h3 className="font-medium mb-2">Maior Gasto</h3>
+            <p className="text-sm text-slate-600">
+              {data.maiorGastoVariavel.descricao}
+            </p>
+            <p className="text-lg font-bold text-red-600">
+              R$ {data.maiorGastoVariavel.valor.toFixed(2)}
+            </p>
+          </div>
+        )}
+
+        {data?.proximaParcela && (
+          <div className="p-4 rounded-2xl bg-white/70 backdrop-blur-md border border-slate-200 shadow-sm">
+            <h3 className="font-medium mb-2">Próxima Parcela</h3>
+            <p className="text-sm text-slate-600">
+              {data.proximaParcela.descricao}
+            </p>
+            <p className="text-sm text-slate-500">
+              {new Date(data.proximaParcela.data).toLocaleDateString("pt-BR")}
+            </p>
+            <p className="text-lg font-bold text-orange-600">
+              R$ {data.proximaParcela.valor.toFixed(2)}
+            </p>
+          </div>
+        )}
       </aside>
     </div>
   );

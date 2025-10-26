@@ -11,7 +11,7 @@ const DashboardCharts = dynamic(() => import("./DashboardCharts"), {
 
 export function DashboardWrapper({ chartData }: { chartData: DataItem[] }) {
   return (
-    <section className="mt-6 bg-white p-4 rounded shadow">
+    <section>
       <h3 className="text-lg font-medium mb-4">Distribuição de Gastos</h3>
       <DashboardCharts chartData={chartData} />
     </section>

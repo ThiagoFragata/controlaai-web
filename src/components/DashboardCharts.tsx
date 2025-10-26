@@ -37,7 +37,7 @@ export default function DashboardCharts({
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row">
-      <div className="w-full h-56 bg-white rounded shadow p-2">
+      <div className="w-full h-64 p-2">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -63,7 +63,7 @@ export default function DashboardCharts({
         </ResponsiveContainer>
       </div>
 
-      <div className="w-full h-56 bg-white rounded shadow p-2">
+      <div className="w-full h-64 p-2">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
