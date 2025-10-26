@@ -43,6 +43,45 @@ https://controlaai-web.vercel.app/
 - **Componentes Reutilizáveis**: Sistema de design consistente
 - **Animações Fluidas**: Transições suaves com Framer Motion
 
+## 🚀 Roadmap - Próximas Funcionalidades
+
+### 🔐 Autenticação Avançada
+
+- **Login com Google**: Integração com OAuth 2.0 do Google para facilitar o acesso
+- **Login Social**: Suporte para outros provedores (GitHub, Apple ID)
+- **Recuperação de Senha**: Sistema de reset de senha via email
+- **Verificação em Duas Etapas**: Camada extra de segurança
+
+### 🤖 Integração com IA/LLM
+
+- **Assistente Financeiro Virtual**: Chatbot para consultas sobre finanças
+- **Categorização Automática**: IA para classificar gastos automaticamente
+- **Análise Preditiva**: Previsões de gastos baseadas no histórico
+- **Insights Inteligentes**: Sugestões personalizadas para economia
+- **Relatórios em Linguagem Natural**: Geração de relatórios explicativos
+
+### 📱 Melhorias na Experiência
+
+- **Notificações Push**: Alertas para vencimentos e metas
+- **Modo Offline**: Funcionamento básico sem conexão
+- **Sincronização Multi-dispositivo**: Dados em tempo real
+- **Exportação de Dados**: PDF, Excel, CSV
+- **Metas Financeiras**: Sistema de objetivos e acompanhamento
+
+### 🔧 Funcionalidades Avançadas
+
+- **Orçamento Inteligente**: Controle de gastos por categoria
+- **Cartões de Crédito**: Integração com faturas e limites
+- **Investimentos**: Acompanhamento de carteira de investimentos
+- **Relatórios Avançados**: Dashboards personalizáveis
+- **API Pública**: Para integrações de terceiros
+
+### 🌍 Internacionalização
+
+- **Múltiplos Idiomas**: Suporte para português, inglês e espanhol
+- **Moedas Locais**: Formatação automática por país
+- **Feriados Regionais**: Consideração em cálculos de prazos
+
 ## 🛠️ Stack Tecnológico
 
 ### Frontend
@@ -222,3 +261,47 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 ---
 
 ⭐ **Se este projeto te ajudou, deixe uma estrela no GitHub!**
+
+## 🔭 Próximos passos e integrações
+
+Abaixo seguem recomendações e ideias para evoluir o projeto em áreas importantes — instruções e decisões rápidas para quando for implementar.
+
+### 1) Login com Google
+
+- Use o provider Google do NextAuth.js para permitir login social. Passos principais:
+  - Crie credenciais OAuth 2.0 no Google Cloud Console (Client ID e Client Secret).
+  - Adicione as variáveis de ambiente no Vercel / .env:
+    - `GOOGLE_CLIENT_ID`
+    - `GOOGLE_CLIENT_SECRET`
+    - `NEXTAUTH_URL` (ex.: https://controlaai-web.vercel.app)
+  - Configure NextAuth providers em `src/lib/auth` (ou arquivo equivalente):
+    - import { GoogleProvider } from 'next-auth/providers/google'
+  - Teste localmente com `NEXTAUTH_URL=http://localhost:3000` e credenciais de desenvolvimento.
+
+### 2) Integração com LLM (Large Language Models)
+
+- Caso queira adicionar funcionalidades baseadas em LLM (ex.: sugestões de categorização, análise de gastos, resumo financeiro):
+  - Escolha um provedor: OpenAI, Anthropic, Azure OpenAI, Google Vertex AI, etc.
+  - Recomendação de arquitetura:
+    - Fazer chamadas a LLMs apenas no servidor (API routes / server actions) para proteger chaves.
+    - Cache de respostas (Redis) para reduzir custo e latência em prompts repetidos.
+    - Implementar rate limits e monitoramento de custo por usuário.
+  - Variáveis de ambiente típicas:
+    - `OPENAI_API_KEY` ou `LLM_API_KEY`
+  - Exemplo de uso: endpoint `/api/insights` que recebe transações e retorna um resumo/insight.
+
+### 3) Outras possibilidades a considerar
+
+- Single Sign-On / SAML para clientes corporativos.
+- Integração mobile: React Native + Expo ou Next.js + PWAs para melhorar a experiência em dispositivos móveis.
+- Pagamentos e faturamento: integração com Stripe se for necessário cobrar por premium features.
+- Observability: Sentry para erro/monitoramento, e um sistema de logs estruturados (e.g., Logflare, Datadog).
+- Jobs/background: usar uma fila (BullMQ, RQ, or serverless cron) para tarefas agendadas (notificações, processamento de extratos).
+- Internacionalização (i18n): next-intl / i18next para suportar outros idiomas.
+- Acessibilidade: auditoria com Lighthouse e melhorias de ARIA/keyboard navigation.
+
+Se quiser, posso:
+
+- Adicionar um exemplo de configuração do NextAuth para Google.
+- Criar um endpoint exemplo para chamadas ao OpenAI (com tratamento de custo e cache).
+- Gerar um checklist para deploy seguro do LLM em produção (monitoramento, limites, fallback).
