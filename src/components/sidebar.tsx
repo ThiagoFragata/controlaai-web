@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -10,80 +11,121 @@ import {
   TrendingDown,
   Wallet,
   LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
-  {
-    title: "Dashboard",
-    icon: LayoutDashboard,
-    href: "/dashboard",
-  },
+  { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
   {
     title: "Contas Mensais",
     icon: CreditCard,
     href: "/dashboard/contas-mensais",
   },
-  {
-    title: "Parcelas",
-    icon: ShoppingCart,
-    href: "/dashboard/parcelas",
-  },
+  { title: "Parcelas", icon: ShoppingCart, href: "/dashboard/parcelas" },
   {
     title: "Gastos Variáveis",
     icon: TrendingDown,
     href: "/dashboard/gastos-variaveis",
   },
-  {
-    title: "Renda",
-    icon: Wallet,
-    href: "/dashboard/renda",
-  },
+  { title: "Renda", icon: Wallet, href: "/dashboard/renda" },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [openMobile, setOpenMobile] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="w-64 h-screen bg-slate-900 text-white fixed left-0 top-0 flex flex-col">
-      <div className="p-6 border-b border-slate-700">
-        <h1 className="text-2xl font-bold">ControlaAí</h1>
-        <p className="text-sm text-slate-400 mt-1">Controle Financeiro</p>
-      </div>
+    <>
+      {/* BOTÃO MOBILE */}
+      <button
+        onClick={() => setOpenMobile(true)}
+        className="fixed top-4 left-4 z-40 p-2 rounded-full bg-white/70 backdrop-blur-md border border-gray-200 shadow-md hover:scale-105 active:scale-95 transition-all lg:hidden"
+      >
+        <Menu className="w-5 h-5 text-[#007AFF]" />
+      </button>
 
-      <nav className="flex-1 p-4 space-y-2">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.href;
+      {/* OVERLAY MOBILE */}
+      {openMobile && (
+        <div
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 animate-in fade-in duration-200 lg:hidden"
+          onClick={() => setOpenMobile(false)}
+        />
+      )}
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
-                isActive
-                  ? "bg-slate-800 text-white"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
-              )}
-            >
-              <Icon className="w-5 h-5" />
-              <span>{item.title}</span>
-            </Link>
-          );
-        })}
-      </nav>
+      {/* SIDEBAR - MODO APPLE GLASS 🍏 */}
+      <aside
+        onMouseEnter={() => setExpanded(true)}
+        onMouseLeave={() => setExpanded(false)}
+        className={cn(
+          "apple-glass fixed top-0 left-0 h-full z-40 flex flex-col transition-all duration-300 ease-[cubic-bezier(.32,.72,0,1)] shadow-[0_8px_30px_rgb(0,0,0,0.06)] border-r border-white/30",
+          expanded ? "w-64" : "w-[72px]",
+          openMobile ? "translate-x-0" : "lg:translate-x-0 -translate-x-full"
+        )}
+      >
+        {/* HEADER */}
+        <div className="p-6 flex justify-between items-center">
+          {expanded && (
+            <div className="transition-opacity duration-300 ease-[cubic-bezier(.32,.72,0,1)]">
+              <h1 className="text-lg font-semibold text-[#111] tracking-tight">
+                ControlaAi
+              </h1>
+              <p className="text-xs text-[#6B7280]">Controle Financeiro</p>
+            </div>
+          )}
 
-      <div className="p-4 border-t border-slate-700 space-y-2">
-        <button
-          onClick={() => signOut({ callbackUrl: "/signin" })}
-          className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-slate-300 hover:bg-slate-800 hover:text-white w-full"
-        >
-          <LogOut className="w-5 h-5" />
-          <span>Sair</span>
-        </button>
-        <p className="text-xs text-slate-400 text-center">Versão 1.0.0</p>
-      </div>
-    </div>
+          <button
+            onClick={() => setOpenMobile(false)}
+            className="lg:hidden p-1 rounded-full hover:bg-white/40 transition-all"
+          >
+            <X className="w-5 h-5 text-[#007AFF]" />
+          </button>
+        </div>
+
+        {/* MENU */}
+        <nav className="flex-1 px-3 space-y-1 overflow-hidden">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const active = pathname === item.href;
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpenMobile(false)}
+                className={cn(
+                  "apple-hover flex items-center gap-3 px-3 py-2.5 rounded-lg select-none transition-all overflow-hidden text-sm group",
+                  active
+                    ? "bg-[#E8F0FF] text-[#007AFF]"
+                    : "text-[#6B7280] hover:bg-white/40 hover:text-[#111]"
+                )}
+              >
+                <Icon className="w-5 h-5 min-w-5 transition-transform duration-200 group-hover:scale-105" />
+                {expanded && <span className="truncate">{item.title}</span>}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* FOOTER */}
+        <div className="p-4 border-t border-white/20">
+          <button
+            onClick={() => signOut({ callbackUrl: "/signin" })}
+            className="apple-hover flex items-center gap-3 px-3 py-2.5 rounded-lg w-full text-[#6B7280]"
+          >
+            <LogOut className="w-5 h-5 min-w-5" />
+            {expanded && <span>Sair</span>}
+          </button>
+
+          {expanded && (
+            <p className="text-xs text-[#9CA3AF] text-center mt-4">
+              Versão 1.0.0
+            </p>
+          )}
+        </div>
+      </aside>
+    </>
   );
 }

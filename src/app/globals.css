@@ -158,11 +158,6 @@
   animation: fadeIn .2s ease-out;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(1px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
 /* Ripple iOS */
 .button-ios-ripple {
   position: relative;
@@ -190,15 +185,38 @@
               opacity 0.6s cubic-bezier(.32,.72,0,1);
 }
 
-/* Press feedback iOS no Segmented Control */
-.tabs-ios:active {
+/* --- Apple Glass Surface --- */
+.apple-glass {
+  background: rgba(255, 255, 255, 0.55);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  border-right: 1px solid rgba(255, 255, 255, 0.45);
+}
+
+.dark .apple-glass {
+  background: rgba(20, 20, 20, 0.55);
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.apple-hover {
+  transition: background 0.25s cubic-bezier(.32,.72,0,1),
+              transform 0.25s cubic-bezier(.32,.72,0,1);
+}
+
+.apple-hover:hover {
+  background: rgba(255,255,255,0.25);
+  transform: translateY(-1px);
+}
+
+.apple-hover:active {
   transform: scale(0.96);
-  transition: transform .18s cubic-bezier(.32,.72,0,1);
 }
 
 
-
-
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(1px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 /* | Elemento         | Cor                              |
 | ---------------- | -------------------------------- |
