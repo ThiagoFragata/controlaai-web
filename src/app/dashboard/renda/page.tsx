@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -176,6 +177,12 @@ export default function RendaPage() {
             <DialogTitle className="text-center text-lg font-medium">
               {selected ? "Editar Renda" : "Nova Renda"}
             </DialogTitle>
+
+            <DialogDescription className="text-center text-sm text-muted-foreground">
+              {selected
+                ? "Atualize os dados da renda abaixo."
+                : "Preencha os dados para cadastrar uma nova renda."}
+            </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-6 mt-4">

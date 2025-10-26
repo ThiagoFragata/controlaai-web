@@ -192,8 +192,8 @@ export default function ParcelasPage() {
 
             <DialogDescription className="text-center text-sm text-muted-foreground">
               {selected
-                ? "Atualize os dados da psssarcela abaixo."
-                : "Preencha os dados para cadastrar uma nova psssarcela."}
+                ? "Atualize os dados da parcela abaixo."
+                : "Preencha os dados para cadastrar uma nova parcela."}
             </DialogDescription>
           </DialogHeader>
 
