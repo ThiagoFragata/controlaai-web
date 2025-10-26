@@ -17,6 +17,7 @@ import {
 import { FloatingInput } from "@/components/floating-input";
 import { FloatingDatePicker } from "@/components/floating-date-picker";
 import { handleCurrency } from "@/utils/functions/handle-currency";
+import { parseBRLToNumber } from "@/utils/functions/parse-brl-to-number";
 
 type Renda = z.infer<typeof rendaSchema>;
 
@@ -76,7 +77,7 @@ export default function RendaPage() {
     const payload: Renda = {
       id: selected?.id,
       descricao: data.get("descricao") as string,
-      valor: Number(data.get("valor")),
+      valor: parseBRLToNumber(data.get("valor") as string),
       dataRecebimento: data.get("dataRecebimento") as string,
       fonte: data.get("fonte") as string,
       observacoes: data.get("observacoes") as string,

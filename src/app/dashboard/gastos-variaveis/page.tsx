@@ -20,6 +20,7 @@ import { FloatingSelect } from "@/components/floating-select";
 import { FORMAS_PAGAMENTO } from "@/utils/constants/formas-pagamento";
 import { handleCurrency } from "@/utils/functions/handle-currency";
 import { CATEGORIAS_GASTOS } from "@/utils/constants/categorias-gastos";
+import { parseBRLToNumber } from "@/utils/functions/parse-brl-to-number";
 
 type Gasto = z.infer<typeof gastoVariavelSchema>;
 
@@ -84,7 +85,7 @@ export default function GastosVariaveisPage() {
       categoria: data.get("categoria") as string,
       formaPagamento: data.get("formaPagamento") as string,
       observacoes: data.get("observacoes") as string,
-      valor: Number(data.get("valor")),
+      valor: parseBRLToNumber(data.get("valor") as string),
       data: data.get("data") as string,
     };
 
