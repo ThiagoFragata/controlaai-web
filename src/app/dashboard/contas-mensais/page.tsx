@@ -14,6 +14,12 @@ import {
 } from "@/components/ui/dialog";
 
 import { FloatingInput } from "@/components/floating-input"; // ✅ usando seu input flutuante
+import { parseBRLToNumber } from "@/utils/functions/parse-brl-to-number";
+import { handleCurrency } from "@/utils/functions/handle-currency";
+
+import { FORMAS_PAGAMENTO } from "@/utils/constants/formas-pagamento";
+import { FloatingSelect } from "@/components/floating-select";
+import { FloatingDateDayPicker } from "@/components/floating-date-day-picker";
 
 type ContaMensal = z.infer<typeof contaMensalSchema>;
 
@@ -78,13 +84,21 @@ export default function ContasMensais() {
       descricao: formData.get("descricao") as string,
       formaPagamento: formData.get("formaPagamento") as string,
       observacoes: formData.get("observacoes") as string,
-      valor: Number(formData.get("valor")),
+      valor: parseBRLToNumber(formData.get("valor") as string),
       vencimentoDia: Number(formData.get("vencimentoDia")),
     };
 
+    const result = contaMensalSchema.safeParse(payload);
+
+    if (!result.success) {
+      alert("Preencha todos os campos obrigatórios corretamente.");
+      return;
+    }
+
+    // ✅ Se estiver editando → update
     return selected
-      ? updateMutation.mutate(payload)
-      : createMutation.mutate(payload);
+      ? updateMutation.mutate(result.data)
+      : createMutation.mutate(result.data);
   }
 
   return (
@@ -172,28 +186,25 @@ export default function ContasMensais() {
                 name="descricao"
                 defaultValue={selected?.descricao}
               />
-
               <FloatingInput
                 label="Valor"
                 name="valor"
-                type="number"
-                step="0.01"
+                type="text"
                 defaultValue={selected?.valor}
+                onChange={handleCurrency}
+                inputMode="decimal"
               />
 
-              <FloatingInput
+              <FloatingDateDayPicker
                 label="Dia do Vencimento"
                 name="vencimentoDia"
-                type="number"
-                min="1"
-                max="31"
-                defaultValue={selected?.vencimentoDia}
+                defaultDay={selected?.vencimentoDia}
               />
-
-              <FloatingInput
+              <FloatingSelect
                 label="Forma de Pagamento"
                 name="formaPagamento"
                 defaultValue={selected?.formaPagamento}
+                options={FORMAS_PAGAMENTO}
               />
 
               <FloatingInput
@@ -201,7 +212,6 @@ export default function ContasMensais() {
                 name="observacoes"
                 defaultValue={selected?.observacoes || ""}
               />
-
               <Button
                 type="submit"
                 className="w-full button-ios button-ios-ripple bg-[#007AFF] hover:bg-[#0065d1] text-white"
