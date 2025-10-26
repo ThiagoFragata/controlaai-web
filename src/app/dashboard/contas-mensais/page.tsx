@@ -15,34 +15,24 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 type ContaMensal = z.infer<typeof contaMensalSchema>;
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
 const columns: Column<ContaMensal>[] = [
-  {
-    header: "Descrição",
-    accessorKey: "descricao" as keyof ContaMensal,
-  },
+  { header: "Descrição", accessorKey: "descricao" },
   {
     header: "Valor",
-    accessorKey: "valor" as keyof ContaMensal,
-    cell: (row: ContaMensal) => `R$ ${(row.valor || 0).toFixed(2)}`,
+    accessorKey: "valor",
+    cell: (row) => `R$ ${(row.valor || 0).toFixed(2)}`,
   },
   {
     header: "Vencimento",
-    accessorKey: "vencimentoDia" as keyof ContaMensal,
-    cell: (row: ContaMensal) => `Dia ${row.vencimentoDia}`,
+    accessorKey: "vencimentoDia",
+    cell: (row) => `Dia ${row.vencimentoDia}`,
   },
-  {
-    header: "Forma de Pagamento",
-    accessorKey: "formaPagamento" as keyof ContaMensal,
-  },
-  {
-    header: "Observações",
-    accessorKey: "observacoes" as keyof ContaMensal,
-  },
+  { header: "Forma de Pagamento", accessorKey: "formaPagamento" },
+  { header: "Observações", accessorKey: "observacoes" },
 ];
 
 async function fetchContasMensais() {
@@ -52,7 +42,6 @@ async function fetchContasMensais() {
 }
 
 export default function ContasMensais() {
-  //   const router = useRouter();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [selectedConta, setSelectedConta] = useState<ContaMensal | null>(null);
@@ -99,9 +88,7 @@ export default function ContasMensais() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) =>
-      fetch(`/api/contas-mensais/${id}`, {
-        method: "DELETE",
-      }).then((res) => {
+      fetch(`/api/contas-mensais/${id}`, { method: "DELETE" }).then((res) => {
         if (!res.ok) throw new Error("Falha ao excluir conta mensal");
         return res.json();
       }),
@@ -111,10 +98,13 @@ export default function ContasMensais() {
   });
 
   async function onSubmit(values: ContaMensal) {
+    // ✅ Garante que o ID sempre vai no PUT
+    const payload = isEditing ? { ...values, id: selectedConta?.id } : values;
+
     if (isEditing) {
-      await updateMutation.mutateAsync(values);
+      await updateMutation.mutateAsync(payload as ContaMensal);
     } else {
-      await createMutation.mutateAsync(values);
+      await createMutation.mutateAsync(payload as ContaMensal);
     }
   }
 
@@ -122,6 +112,7 @@ export default function ContasMensais() {
     if (!conta.id) return;
     deleteMutation.mutate(conta.id);
   }
+
   return (
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-8">
@@ -141,6 +132,7 @@ export default function ContasMensais() {
         data={contas}
         columns={columns}
         onEdit={(conta) => {
+          console.log("Editando conta:", conta); // 👀 confirmar id
           setSelectedConta(conta);
           setOpen(true);
         }}
@@ -151,21 +143,18 @@ export default function ContasMensais() {
         open={open}
         onOpenChange={setOpen}
         title={isEditing ? "Editar Conta Mensal" : "Nova Conta Mensal"}
-        defaultValues={
-          selectedConta
-            ? {
-                ...selectedConta,
-                valor: Number(selectedConta.valor) || 0,
-                vencimentoDia: Number(selectedConta.vencimentoDia) || 1,
-              }
-            : undefined
-        }
+        defaultValues={selectedConta || undefined}
         onSubmit={onSubmit}
-        isSubmitting={
-          createMutation.status === "pending" ||
-          updateMutation.status === "pending"
-        }
+        isSubmitting={createMutation.isPending || updateMutation.isPending}
       >
+        {/* ✅ Campo oculto garantindo o id no submit */}
+        {isEditing && (
+          <FormField
+            name="id"
+            render={({ field }) => <input type="hidden" {...field} />}
+          />
+        )}
+
         <FormField
           name="descricao"
           render={({ field }) => (
