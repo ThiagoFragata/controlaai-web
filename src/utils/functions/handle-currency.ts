@@ -7,4 +7,6 @@ export function handleCurrency(e: React.ChangeEvent<HTMLInputElement>) {
     style: "currency",
     currency: "BRL",
   });
+
+  return numeric; // ← RETORNA o valor como número
 }

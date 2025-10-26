@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -178,6 +179,12 @@ export default function ContasMensais() {
               <DialogTitle className="text-center text-lg font-medium">
                 {selected ? "Editar Conta" : "Nova Conta"}
               </DialogTitle>
+
+              <DialogDescription className="text-center text-sm text-muted-foreground">
+                {selected
+                  ? "Atualize os dados da conta abaixo."
+                  : "Preencha os dados para cadastrar uma nova conta."}
+              </DialogDescription>
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="space-y-6 mt-4">
@@ -186,6 +193,7 @@ export default function ContasMensais() {
                 name="descricao"
                 defaultValue={selected?.descricao}
               />
+
               <FloatingInput
                 label="Valor"
                 name="valor"
@@ -200,6 +208,7 @@ export default function ContasMensais() {
                 name="vencimentoDia"
                 defaultDay={selected?.vencimentoDia}
               />
+
               <FloatingSelect
                 label="Forma de Pagamento"
                 name="formaPagamento"

@@ -10,10 +10,16 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { FloatingInput } from "@/components/floating-input";
+import { FloatingDatePicker } from "@/components/floating-date-picker";
+import { FloatingSelect } from "@/components/floating-select";
+import { FORMAS_PAGAMENTO } from "@/utils/constants/formas-pagamento";
+import { handleCurrency } from "@/utils/functions/handle-currency";
+import { CATEGORIAS_GASTOS } from "@/utils/constants/categorias-gastos";
 
 type Gasto = z.infer<typeof gastoVariavelSchema>;
 
@@ -173,15 +179,20 @@ export default function GastosVariaveisPage() {
         <DialogContent className="bg-white rounded-2xl p-6">
           <DialogHeader>
             <DialogTitle className="text-center text-lg font-medium">
-              {selected ? "Editar Gasto" : "Novo Gasto"}
+              {selected ? "Editar Gasto" : "Nova Gasto"}
             </DialogTitle>
+
+            <DialogDescription className="text-center text-sm text-muted-foreground">
+              {selected
+                ? "Atualize os dados da gasto abaixo."
+                : "Preencha os dados para cadastrar uma nova gasto."}
+            </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-6 mt-4">
-            <FloatingInput
+            <FloatingDatePicker
               label="Data"
               name="data"
-              type="date"
               defaultValue={selected?.data}
             />
 
@@ -191,24 +202,27 @@ export default function GastosVariaveisPage() {
               defaultValue={selected?.descricao}
             />
 
-            <FloatingInput
+            <FloatingSelect
               label="Categoria"
               name="categoria"
               defaultValue={selected?.categoria}
+              options={CATEGORIAS_GASTOS}
             />
 
             <FloatingInput
               label="Valor"
               name="valor"
-              type="number"
-              step="0.01"
+              type="text"
               defaultValue={selected?.valor}
+              onChange={handleCurrency}
+              inputMode="decimal"
             />
 
-            <FloatingInput
+            <FloatingSelect
               label="Forma de Pagamento"
               name="formaPagamento"
               defaultValue={selected?.formaPagamento}
+              options={FORMAS_PAGAMENTO}
             />
 
             <FloatingInput

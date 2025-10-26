@@ -10,10 +10,13 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { FloatingInput } from "@/components/floating-input";
+import { handleCurrency } from "@/utils/functions/handle-currency";
+import { FloatingDatePicker } from "@/components/floating-date-picker";
 
 type Parcela = z.infer<typeof parcelaSchema>;
 
@@ -27,6 +30,12 @@ export default function ParcelasPage() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Parcela | null>(null);
+
+  // ESTADOS CONTROLADOS PARA CÁLCULO AUTOMÁTICO
+  const [valorTotal, setValorTotal] = useState(0);
+  const [qtdParcelas, setQtdParcelas] = useState(1);
+
+  const valorParcela = qtdParcelas > 0 ? valorTotal / qtdParcelas : 0;
 
   const { data: parcelas = [] } = useQuery({
     queryKey: ["parcelas"],
@@ -69,15 +78,16 @@ export default function ParcelasPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const data = new FormData(e.currentTarget as HTMLFormElement);
+    const form = e.currentTarget as HTMLFormElement;
+    const data = new FormData(form);
 
     const payload: Parcela = {
       id: selected?.id,
       descricao: data.get("descricao") as string,
-      valorTotal: Number(data.get("valorTotal")),
-      qtdParcelas: Number(data.get("qtdParcelas")),
+      valorTotal,
+      qtdParcelas,
       parcelaAtual: Number(data.get("parcelaAtual")),
-      valorParcela: Number(data.get("valorParcela")),
+      valorParcela,
       vencimentoData: data.get("vencimentoData") as string,
       observacoes: data.get("observacoes") as string,
     };
@@ -179,6 +189,12 @@ export default function ParcelasPage() {
             <DialogTitle className="text-center text-lg font-medium">
               {selected ? "Editar Parcela" : "Nova Parcela"}
             </DialogTitle>
+
+            <DialogDescription className="text-center text-sm text-muted-foreground">
+              {selected
+                ? "Atualize os dados da psssarcela abaixo."
+                : "Preencha os dados para cadastrar uma nova psssarcela."}
+            </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-6 mt-4">
@@ -190,18 +206,18 @@ export default function ParcelasPage() {
 
             <FloatingInput
               label="Valor Total"
-              name="valorTotal"
-              type="number"
-              step="0.01"
+              type="text"
+              inputMode="decimal"
+              onChange={(e) => setValorTotal(handleCurrency(e))}
               defaultValue={selected?.valorTotal}
             />
 
             <FloatingInput
               label="Quantidade de Parcelas"
-              name="qtdParcelas"
               type="number"
               min="1"
-              defaultValue={selected?.qtdParcelas}
+              value={qtdParcelas}
+              onChange={(e) => setQtdParcelas(Number(e.target.value))}
             />
 
             <FloatingInput
@@ -215,15 +231,17 @@ export default function ParcelasPage() {
             <FloatingInput
               label="Valor da Parcela"
               name="valorParcela"
-              type="number"
-              step="0.01"
-              defaultValue={selected?.valorParcela}
+              type="text"
+              value={valorParcela.toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL",
+              })}
+              readOnly
             />
 
-            <FloatingInput
+            <FloatingDatePicker
               label="Data de Vencimento"
               name="vencimentoData"
-              type="date"
               defaultValue={selected?.vencimentoData}
             />
 
@@ -233,7 +251,7 @@ export default function ParcelasPage() {
               defaultValue={selected?.observacoes || ""}
             />
 
-            <Button className="w-full button-ios button-ios-ripple bg-[#007AFF] hover:bg-[#0065d1] text-white">
+            <Button className="w-full button-ios bg-[#007AFF] hover:bg-[#0065d1] text-white">
               Salvar
             </Button>
           </form>

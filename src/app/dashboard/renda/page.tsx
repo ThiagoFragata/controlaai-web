@@ -14,6 +14,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { FloatingInput } from "@/components/floating-input";
+import { FloatingDatePicker } from "@/components/floating-date-picker";
+import { handleCurrency } from "@/utils/functions/handle-currency";
 
 type Renda = z.infer<typeof rendaSchema>;
 
@@ -177,10 +179,9 @@ export default function RendaPage() {
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-6 mt-4">
-            <FloatingInput
+            <FloatingDatePicker
               label="Data de Recebimento"
               name="dataRecebimento"
-              type="date"
               defaultValue={selected?.dataRecebimento}
             />
 
@@ -193,9 +194,10 @@ export default function RendaPage() {
             <FloatingInput
               label="Valor"
               name="valor"
-              type="number"
-              step="0.01"
+              type="text"
               defaultValue={selected?.valor}
+              onChange={handleCurrency}
+              inputMode="decimal"
             />
 
             <FloatingInput
