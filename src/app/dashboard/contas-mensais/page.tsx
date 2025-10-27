@@ -21,6 +21,7 @@ import { handleCurrency } from "@/utils/functions/handle-currency";
 import { FORMAS_PAGAMENTO } from "@/utils/constants/formas-pagamento";
 import { FloatingSelect } from "@/components/floating-select";
 import { FloatingDateDayPicker } from "@/components/floating-date-day-picker";
+import { toast } from "sonner";
 
 type ContaMensal = z.infer<typeof contaMensalSchema>;
 
@@ -89,17 +90,21 @@ export default function ContasMensais() {
       vencimentoDia: Number(formData.get("vencimentoDia")),
     };
 
-    const result = contaMensalSchema.safeParse(payload);
-
-    if (!result.success) {
-      alert("Preencha todos os campos obrigatórios corretamente.");
-      return;
+    // Validações apenas no cadastro (criação)
+    if (!selected) {
+      const result = contaMensalSchema.safeParse(payload);
+      if (!result.success) {
+        result.error.issues.forEach((issue) => {
+          toast.error(issue.message);
+        });
+        return;
+      }
     }
 
     // ✅ Se estiver editando → update
     return selected
-      ? updateMutation.mutate(result.data)
-      : createMutation.mutate(result.data);
+      ? updateMutation.mutate(payload)
+      : createMutation.mutate(payload);
   }
 
   return (

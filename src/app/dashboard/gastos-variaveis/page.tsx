@@ -21,6 +21,7 @@ import { FORMAS_PAGAMENTO } from "@/utils/constants/formas-pagamento";
 import { handleCurrency } from "@/utils/functions/handle-currency";
 import { CATEGORIAS_GASTOS } from "@/utils/constants/categorias-gastos";
 import { parseBRLToNumber } from "@/utils/functions/parse-brl-to-number";
+import { toast } from "sonner";
 
 type Gasto = z.infer<typeof gastoVariavelSchema>;
 
@@ -88,6 +89,17 @@ export default function GastosVariaveisPage() {
       valor: parseBRLToNumber(data.get("valor") as string),
       data: data.get("data") as string,
     };
+
+    // Validações apenas no cadastro (criação)
+    if (!selected) {
+      const result = gastoVariavelSchema.safeParse(payload);
+      if (!result.success) {
+        result.error.issues.forEach((issue) => {
+          toast.error(issue.message);
+        });
+        return;
+      }
+    }
 
     return selected
       ? updateMutation.mutate(payload)

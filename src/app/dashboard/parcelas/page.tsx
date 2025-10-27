@@ -17,6 +17,7 @@ import {
 import { FloatingInput } from "@/components/floating-input";
 import { handleCurrency } from "@/utils/functions/handle-currency";
 import { FloatingDatePicker } from "@/components/floating-date-picker";
+import { toast } from "sonner";
 
 type Parcela = z.infer<typeof parcelaSchema>;
 
@@ -91,6 +92,17 @@ export default function ParcelasPage() {
       vencimentoData: data.get("vencimentoData") as string,
       observacoes: data.get("observacoes") as string,
     };
+
+    // Validações apenas no cadastro (criação)
+    if (!selected) {
+      const result = parcelaSchema.safeParse(payload);
+      if (!result.success) {
+        result.error.issues.forEach((issue) => {
+          toast.error(issue.message);
+        });
+        return;
+      }
+    }
 
     return selected
       ? updateMutation.mutate(payload)

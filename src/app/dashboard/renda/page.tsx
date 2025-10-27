@@ -18,6 +18,7 @@ import { FloatingInput } from "@/components/floating-input";
 import { FloatingDatePicker } from "@/components/floating-date-picker";
 import { handleCurrency } from "@/utils/functions/handle-currency";
 import { parseBRLToNumber } from "@/utils/functions/parse-brl-to-number";
+import { toast } from "sonner";
 
 type Renda = z.infer<typeof rendaSchema>;
 
@@ -82,6 +83,17 @@ export default function RendaPage() {
       fonte: data.get("fonte") as string,
       observacoes: data.get("observacoes") as string,
     };
+
+    // Validações apenas no cadastro (criação)
+    if (!selected) {
+      const result = rendaSchema.safeParse(payload);
+      if (!result.success) {
+        result.error.issues.forEach((issue) => {
+          toast.error(issue.message);
+        });
+        return;
+      }
+    }
 
     return selected
       ? updateMutation.mutate(payload)
