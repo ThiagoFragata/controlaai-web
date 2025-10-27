@@ -20,8 +20,6 @@ export const metadata: Metadata = {
   title: "ControlaAí - Controle Financeiro",
   description: "Sistema de controle financeiro pessoal",
   manifest: "/manifest.json",
-  themeColor: "#007AFF",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -32,6 +30,13 @@ export const metadata: Metadata = {
     shortcut: "/icons/favicon.ico",
     apple: "/icons/apple-icon.png",
   },
+};
+
+export const viewport = {
+  themeColor: "#007AFF",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
