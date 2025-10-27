@@ -7,6 +7,10 @@ export const metadata: Metadata = {
   title: "Dashboard - ControlaAí",
 };
 
+// This route uses server-side cookies to fetch user-specific data.
+// Force dynamic rendering to avoid static prerender errors.
+export const dynamic = "force-dynamic";
+
 async function getDashboard() {
   try {
     const cookieStore = await cookies(); // ✅ Cookies no servidor
