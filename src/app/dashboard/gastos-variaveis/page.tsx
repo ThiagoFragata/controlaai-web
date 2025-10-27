@@ -95,84 +95,143 @@ export default function GastosVariaveisPage() {
   }
 
   return (
-    <div className="px-6 py-10">
+    <div className="w-full px-6 py-14">
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
-        <h1 className="text-3xl font-semibold text-[#111]">Gastos Variáveis</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#111]">
+          Gastos Variáveis
+        </h1>
 
         <Button
           onClick={() => {
             setSelected(null);
             setOpen(true);
           }}
-          className="button-ios button-ios-ripple bg-[#007AFF] hover:bg-[#0065d1] text-white px-4 py-2 rounded-lg"
+          className="button-ios button-ios-ripple bg-[#007AFF] hover:bg-[#0065d1] text-white px-4 py-2 rounded-lg w-full sm:w-auto"
         >
           <PlusCircle className="w-4 h-4 mr-2" />
           Novo Gasto
         </Button>
       </div>
 
-      {/* TABELA APPLE GLASS */}
+      {/* TABELA RESPONSIVA */}
       <div className="rounded-2xl overflow-hidden border border-[#E5E7EB] bg-white/80 backdrop-blur-md shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
-        <table className="w-full text-sm">
-          <thead className="bg-white/60 backdrop-blur-sm">
-            <tr className="text-left text-[#6B7280] select-none">
-              <th className="px-4 py-3">Data</th>
-              <th className="px-4 py-3">Descrição</th>
-              <th className="px-4 py-3">Categoria</th>
-              <th className="px-4 py-3">Valor</th>
-              <th className="px-4 py-3">Forma de Pagamento</th>
-              <th className="px-4 py-3">Observações</th>
-              <th className="px-4 py-3 text-right">Ações</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {gastos.map((g: Gasto, i: number) => (
-              <tr
-                key={g.id || i}
-                className={`transition-all ${
-                  i % 2 === 0 ? "bg-white/60" : "bg-white/30"
-                } hover:bg-[#E8F1FF]/80`}
-              >
-                <td className="px-4 py-3">
-                  {g.data ? new Date(g.data).toLocaleDateString("pt-BR") : ""}
-                </td>
-                <td className="px-4 py-3">{g.descricao}</td>
-                <td className="px-4 py-3">{g.categoria}</td>
-                <td className="px-4 py-3 font-medium">
-                  R$ {g.valor.toFixed(2)}
-                </td>
-                <td className="px-4 py-3">{g.formaPagamento}</td>
-                <td className="px-4 py-3">{g.observacoes}</td>
-
-                <td className="px-4 py-3">
-                  <div className="flex justify-end gap-3">
-                    <button
-                      onClick={() => {
-                        setSelected({
-                          ...g,
-                          data: g.data ? g.data.split("T")[0] : "",
-                        });
-                        setOpen(true);
-                      }}
-                      className="icon-ios text-[#007AFF]"
-                    >
-                      <Pencil size={18} />
-                    </button>
-
-                    <button
-                      onClick={() => deleteMutation.mutate(g.id!)}
-                      className="icon-ios text-[#E5484D]"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </td>
+        {/* Desktop Table */}
+        <div className="hidden sm:block">
+          <table className="w-full text-sm">
+            <thead className="bg-white/60 backdrop-blur-sm">
+              <tr className="text-left text-[#6B7280] select-none">
+                <th className="px-4 py-3">Data</th>
+                <th className="px-4 py-3">Descrição</th>
+                <th className="px-4 py-3">Categoria</th>
+                <th className="px-4 py-3">Valor</th>
+                <th className="px-4 py-3">Forma de Pagamento</th>
+                <th className="px-4 py-3">Observações</th>
+                <th className="px-4 py-3 text-right">Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {gastos.map((g: Gasto, i: number) => (
+                <tr
+                  key={g.id || i}
+                  className={`transition-all ${
+                    i % 2 === 0 ? "bg-white/60" : "bg-white/30"
+                  } hover:bg-[#E8F1FF]/80`}
+                >
+                  <td className="px-4 py-3">
+                    {g.data ? new Date(g.data).toLocaleDateString("pt-BR") : ""}
+                  </td>
+                  <td className="px-4 py-3">{g.descricao}</td>
+                  <td className="px-4 py-3">{g.categoria}</td>
+                  <td className="px-4 py-3 font-medium">
+                    R$ {g.valor.toFixed(2)}
+                  </td>
+                  <td className="px-4 py-3">{g.formaPagamento}</td>
+                  <td className="px-4 py-3">{g.observacoes}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-3">
+                      <button
+                        onClick={() => {
+                          setSelected({
+                            ...g,
+                            data: g.data ? g.data.split("T")[0] : "",
+                          });
+                          setOpen(true);
+                        }}
+                        className="icon-ios text-[#007AFF]"
+                      >
+                        <Pencil size={18} />
+                      </button>
+                      <button
+                        onClick={() => deleteMutation.mutate(g.id!)}
+                        className="icon-ios text-[#E5484D]"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="sm:hidden space-y-4 p-4">
+          {gastos.map((g: Gasto, i: number) => (
+            <div
+              key={g.id || i}
+              className="bg-white rounded-lg border border-[#E5E7EB] p-4 shadow-sm"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="font-medium text-[#111]">{g.descricao}</h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setSelected({
+                        ...g,
+                        data: g.data ? g.data.split("T")[0] : "",
+                      });
+                      setOpen(true);
+                    }}
+                    className="icon-ios text-[#007AFF]"
+                  >
+                    <Pencil size={18} />
+                  </button>
+                  <button
+                    onClick={() => deleteMutation.mutate(g.id!)}
+                    className="icon-ios text-[#E5484D]"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1 text-sm text-[#6B7280]">
+                <p>
+                  <span className="font-medium">Data:</span>{" "}
+                  {g.data ? new Date(g.data).toLocaleDateString("pt-BR") : ""}
+                </p>
+                <p>
+                  <span className="font-medium">Categoria:</span> {g.categoria}
+                </p>
+                <p>
+                  <span className="font-medium">Valor:</span> R${" "}
+                  {g.valor.toFixed(2)}
+                </p>
+                <p>
+                  <span className="font-medium">Forma de Pagamento:</span>{" "}
+                  {g.formaPagamento}
+                </p>
+                {g.observacoes && (
+                  <p>
+                    <span className="font-medium">Observações:</span>{" "}
+                    {g.observacoes}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* MODAL */}

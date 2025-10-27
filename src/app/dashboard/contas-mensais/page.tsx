@@ -103,11 +103,11 @@ export default function ContasMensais() {
   }
 
   return (
-    <div className="w-full px-6 py-10 ">
+    <div className="w-full px-6 py-14">
       <div className="mx-auto">
         {/* HEADER */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-          <h1 className="text-3xl font-semibold tracking-tight text-[#111]">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#111]">
             Contas Mensais
           </h1>
 
@@ -116,39 +116,72 @@ export default function ContasMensais() {
               setSelected(null);
               setOpen(true);
             }}
-            className="button-ios button-ios-ripple bg-[#007AFF] hover:bg-[#0065d1] text-white px-4 py-2 rounded-lg"
+            className="button-ios button-ios-ripple bg-[#007AFF] hover:bg-[#0065d1] text-white px-4 py-2 rounded-lg w-full sm:w-auto"
           >
             <PlusCircle className="w-4 h-4 mr-2" />
             Nova Conta
           </Button>
         </div>
 
-        {/* TABELA */}
+        {/* TABELA RESPONSIVA */}
         <div className="rounded-2xl overflow-hidden border border-[#E5E7EB] bg-white/80 backdrop-blur-md shadow-[0_4px_14px_rgba(0,0,0,0.05)]">
-          <table className="w-full text-sm">
-            <thead className="bg-white/60">
-              <tr className="text-left text-[#6B7280]">
-                <th className="px-4 py-3">Descrição</th>
-                <th className="px-4 py-3">Valor</th>
-                <th className="px-4 py-3">Vencimento</th>
-                <th className="px-4 py-3">Forma de Pagamento</th>
-                <th className="px-4 py-3">Observações</th>
-                <th className="px-4 py-3 text-right">Ações</th>
-              </tr>
-            </thead>
+          {/* Desktop Table */}
+          <div className="hidden sm:block">
+            <table className="w-full text-sm">
+              <thead className="bg-white/60">
+                <tr className="text-left text-[#6B7280]">
+                  <th className="px-4 py-3">Descrição</th>
+                  <th className="px-4 py-3">Valor</th>
+                  <th className="px-4 py-3">Vencimento</th>
+                  <th className="px-4 py-3">Forma de Pagamento</th>
+                  <th className="px-4 py-3">Observações</th>
+                  <th className="px-4 py-3 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contas.map((conta: ContaMensal, index: number) => (
+                  <tr
+                    key={conta.id || index}
+                    className="table-row border-b border-[#E5E7EB]/60 text-[#111]"
+                  >
+                    <td className="px-4 py-3">{conta.descricao}</td>
+                    <td className="px-4 py-3">R$ {conta.valor.toFixed(2)}</td>
+                    <td className="px-4 py-3">Dia {conta.vencimentoDia}</td>
+                    <td className="px-4 py-3">{conta.formaPagamento}</td>
+                    <td className="px-4 py-3">{conta.observacoes}</td>
+                    <td className="px-4 py-3 text-right flex justify-end gap-3">
+                      <button
+                        onClick={() => {
+                          setSelected(conta);
+                          setOpen(true);
+                        }}
+                        className="icon-ios text-[#007AFF]"
+                      >
+                        <Pencil size={18} />
+                      </button>
+                      <button
+                        onClick={() => deleteMutation.mutate(conta.id!)}
+                        className="icon-ios text-[#E5484D]"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-            <tbody>
-              {contas.map((conta: ContaMensal, index: number) => (
-                <tr
-                  key={conta.id || index}
-                  className="table-row border-b border-[#E5E7EB]/60 text-[#111]"
-                >
-                  <td className="px-4 py-3">{conta.descricao}</td>
-                  <td className="px-4 py-3">R$ {conta.valor.toFixed(2)}</td>
-                  <td className="px-4 py-3">Dia {conta.vencimentoDia}</td>
-                  <td className="px-4 py-3">{conta.formaPagamento}</td>
-                  <td className="px-4 py-3">{conta.observacoes}</td>
-                  <td className="px-4 py-3 text-right flex justify-end gap-3">
+          {/* Mobile Cards */}
+          <div className="sm:hidden space-y-4 p-4">
+            {contas.map((conta: ContaMensal, index: number) => (
+              <div
+                key={conta.id || index}
+                className="bg-white rounded-lg border border-[#E5E7EB] p-4 shadow-sm"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-medium text-[#111]">{conta.descricao}</h3>
+                  <div className="flex gap-2">
                     <button
                       onClick={() => {
                         setSelected(conta);
@@ -158,18 +191,37 @@ export default function ContasMensais() {
                     >
                       <Pencil size={18} />
                     </button>
-
                     <button
                       onClick={() => deleteMutation.mutate(conta.id!)}
                       className="icon-ios text-[#E5484D]"
                     >
                       <Trash2 size={18} />
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+                <div className="space-y-1 text-sm text-[#6B7280]">
+                  <p>
+                    <span className="font-medium">Valor:</span> R${" "}
+                    {conta.valor.toFixed(2)}
+                  </p>
+                  <p>
+                    <span className="font-medium">Vencimento:</span> Dia{" "}
+                    {conta.vencimentoDia}
+                  </p>
+                  <p>
+                    <span className="font-medium">Forma de Pagamento:</span>{" "}
+                    {conta.formaPagamento}
+                  </p>
+                  {conta.observacoes && (
+                    <p>
+                      <span className="font-medium">Observações:</span>{" "}
+                      {conta.observacoes}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* MODAL */}

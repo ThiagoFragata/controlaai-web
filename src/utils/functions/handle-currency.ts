@@ -10,3 +10,10 @@ export function handleCurrency(e: React.ChangeEvent<HTMLInputElement>) {
 
   return numeric; // ← RETORNA o valor como número
 }
+
+export function formatCurrency(value: number) {
+  return value.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}

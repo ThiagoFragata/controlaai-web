@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DashboardWrapper } from "@/components/DashboardWrapper";
 import { cookies } from "next/headers";
+import { formatCurrency } from "@/utils/functions/handle-currency";
 
 export const metadata: Metadata = {
   title: "Dashboard - ControlaAí",
@@ -30,13 +31,15 @@ export default async function Home() {
   const data = await getDashboard();
 
   return (
-    <div className="px-6 py-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="px-6 py-14 grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* COLUNA PRINCIPAL */}
       <div className="col-span-2 space-y-6">
         {/* TÍTULO */}
-        <h2 className="text-3xl font-semibold text-[#111]">Resumo Mensal</h2>
+        <h2 className="text-2xl sm:text-3xl font-semibold text-[#111]">
+          Resumo Mensal
+        </h2>
         {/* CARDS */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             {
               label: "Receitas",
@@ -66,11 +69,11 @@ export default async function Home() {
             >
               <p className="text-sm text-slate-500">{item.label}</p>
               <p
-                className={`mt-1 text-2xl font-semibold ${
+                className={`mt-1 text-xl sm:text-2xl font-semibold ${
                   item.className || "text-[#111]"
                 }`}
               >
-                {data ? `R$ ${item.value?.toFixed(2)}` : "-"}
+                {data ? `${formatCurrency(item.value)}` : "-"}
               </p>
               <p className="text-xs text-slate-400 mt-1">{item.footer}</p>
             </div>
@@ -84,7 +87,7 @@ export default async function Home() {
       </div>
 
       {/* SIDEBAR */}
-      <aside className="space-y-4">
+      <div className="col-span-2 md:col-span-1 space-y-4">
         <div className="p-4 rounded-2xl bg-white/70 backdrop-blur-md border border-slate-200 shadow-sm">
           <h3 className="font-medium mb-2">Gastos Variáveis</h3>
           <p className="text-lg font-semibold text-[#111]">
@@ -122,7 +125,7 @@ export default async function Home() {
             </p>
           </div>
         )}
-      </aside>
+      </div>
     </div>
   );
 }

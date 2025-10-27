@@ -20,7 +20,7 @@ export default async function DashboardLayout({
       <Sidebar />
       <main
         className={cn(
-          "flex-1 min-h-screen bg-[#F5F5F7] p-6 transition-all duration-300 ease-[cubic-bezier(.32,.72,0,1)]",
+          "flex-1 min-h-screen bg-[#F5F5F7] transition-all duration-300 ease-[cubic-bezier(.32,.72,0,1)]",
           "lg:ml-[70px]", // espaço padrão quando compacto
           "group-[.sidebar-expanded]:lg:ml-64" // espaço quando expandido
         )}
